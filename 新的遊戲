@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>貪食蛇遊戲 - 多種食物挑戰！</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            width: 100%;
+            background-color: #111;
+            border-bottom: 3px solid #ff3333;
+        }
+        
+        h1 {
+            color: #ff3333;
+            font-size: 2.8rem;
+            text-shadow: 0 0 15px rgba(255, 50, 50, 0.7);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #4CAF50;
+            font-size: 1.2rem;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            width: 600px;
+            background-color: #111;
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #333;
+        }
+        
+        .score-box, .high-score-box, .length-box, .speed-box {
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: #aaa;
+            font-size: 1rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #4CAF50;
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+        
+        #gameCanvas {
+            background-color: #000;
+            border: 4px solid #333;
+            border-radius: 5px;
+            box-shadow: 0 0 25px rgba(255, 50, 50, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 600px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 140px;
+            border: 2px solid #444;
+        }
+        
+        button:hover {
+            background-color: #444;
+            transform: translateY(-2px);
+        }
+        
+        #startBtn {
+            background-color: #4CAF50;
+            border-color: #5cb85c;
+        }
+        
+        #startBtn:hover {
+            background-color: #5cb85c;
+        }
+        
+        #pauseBtn {
+            background-color: #f0ad4e;
+            border-color: #eea236;
+        }
+        
+        #pauseBtn:hover {
+            background-color: #eea236;
+        }
+        
+        #restartBtn {
+            background-color: #d9534f;
+            border-color: #d43f3a;
+        }
+        
+        #restartBtn:hover {
+            background-color: #d43f3a;
+        }
+        
+        .food-types {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .food-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+            min-width: 120px;
+        }
+        
+        .food-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-bottom: 8px;
+        }
+        
+        .normal-food {
+            background: linear-gradient(45deg, #ff3333, #ff6666);
+            box-shadow: 0 0 10px #ff3333;
+        }
+        
+        .golden-food {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            box-shadow: 0 0 10px #ffd700;
+            animation: golden-glow 2s infinite alternate;
+        }
+        
+        @keyframes golden-glow {
+            from { box-shadow: 0 0 10px #ffd700; }
+            to { box-shadow: 0 0 20px #ffed4e; }
+        }
+        
+        .poison-food {
+            background: linear-gradient(45deg, #9b30ff, #bf7fff);
+            box-shadow: 0 0 10px #9b30ff;
+            animation: poison-pulse 1.5s infinite alternate;
+        }
+        
+        @keyframes poison-pulse {
+            from { box-shadow: 0 0 10px #9b30ff; }
+            to { box-shadow: 0 0 15px #bf7fff; }
+        }
+        
+        .food-name {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .food-effect {
+            color: #ccc;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        
+        .instructions {
+            background-color: #111;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .instructions h3 {
+            color: #ff3333;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4rem;
+        }
+        
+        .instructions p {
+            margin-bottom: 8px;
+            color: #ccc;
+            line-height: 1.5;
+        }
+        
+        .key {
+            display: inline-block;
+            background-color: #222;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 0 3px;
+        }
+        
+        .mobile-controls {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+            width: 300px;
+        }
+        
+        .mobile-controls button {
+            min-width: auto;
+            padding: 20px;
+            font-size: 1.8rem;
+            background-color: #333;
+        }
+        
+        .up-btn {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .left-btn {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .down-btn {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        
+        .right-btn {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            border: 4px solid #ff3333;
+            display: none;
+            z-index: 10;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 0 50px rgba(255, 50, 50, 0.5);
+        }
+        
+        .game-over h2 {
+            color: #ff3333;
+            font-size: 3rem;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255, 50, 50, 0.7);
+        }
+        
+        .game-over p {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        
+        .game-over span {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 2rem;
+        }
+        
+        .effect-notification {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding:
