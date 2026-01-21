@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 合作解謎遊戲：逃離迷宮</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0c2461, #1e3799);
+            padding: 20px;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            color: #bbbbbb;
+            margin-bottom: 25px;
+            font-size: 1.1rem;
+        }
+        
+        .game-info {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .score-container, .time-container, .level-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            min-width: 150px;
+        }
+        
+        .score-label, .time-label, .level-label {
+            font-size: 1rem;
+            color: #90caf9;
+            margin-bottom: 5px;
+        }
+        
+        .score-value, .time-value, .level-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffcc80;
+        }
+        
+        .high-score-container {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .high-score-label {
+            font-size: 1rem;
+            color: #90caf9;
+            margin-bottom: 5px;
+        }
+        
+        .high-score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffcc80;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 900px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .player-section {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #90caf9;
+            text-align: center;
+            border-bottom: 2px solid rgba(144, 202, 249, 0.3);
+            padding-bottom: 8px;
+        }
+        
+        .maze-container {
+            position: relative;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        #mazeCanvas {
+            display: block;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .control-btn {
+            padding: 12px;
+            background-color: rgba(144, 202, 249, 0.2);
+            color: #90caf9;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-btn:hover {
+            background-color: rgba(144, 202, 249, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .puzzle-section {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .puzzle-container {
+            flex: 1;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .puzzle-instruction {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #e0e0e0;
+        }
+        
+        .puzzle-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .code-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .code-digit {
+            width: 50px;
+            height: 60px;
+            font-size: 2rem;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(144, 202, 249, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .code-digit:focus {
+            outline: none;
+            border-color: #90caf9;
+            box-shadow: 0 0 10px rgba(144, 202, 249, 0.5);
+        }
+        
+        .puzzle-btn {
+            padding: 12px 24px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+        }
+        
+        .puzzle-btn:hover {
+            background-color: #388e3c;
+            transform: translateY(-2px);
+        }
+        
+        .hint-container {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .hint-title {
+            color: #ffcc80;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .hint-text {
+            color: #e0e0e0;
+            line-height: 1.5;
+        }
+        
+        .game-settings {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            justify-content: center;
+        }
+        
+        .difficulty-selector, .game-controls {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .setting-label {
+            margin-bottom: 10px;
+            color: #90caf9;
+            font-weight: 500;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .difficulty-buttons, .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .difficulty-btn, .control-btn-main {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+            flex: 1;
+        }
+        
+        .difficulty-btn {
+            background-color: rgba(144, 202, 249, 0.2);
+            color: #90caf9;
+            border: 1px solid rgba(144, 202, 249, 0.3);
+        }
+        
+        .difficulty-btn.active {
+            background-color: #90caf9;
+            color: #0c2461;
+            box-shadow: 0 0 10px rgba(144, 202, 249, 0.5);
+        }
+        
+        .control-btn-main {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .control-btn-main:hover {
+            background-color: #388e3c;
+            transform: translateY(-2px);
+        }
+        
+        .control-btn-main.reset {
+            background-color: #f44336;
+        }
+        
+        .control-btn-main.reset:hover {
+            background-color: #d32f2f;
+        }
+        
+        .game-status {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #statusText {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+        }
+        
+        .game-over {
+            color: #ff5252 !important;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .game-success {
+            color: #4caf50 !important;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .instructions {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #90caf9;
+            border-bottom: 2px solid rgba(144, 202, 249, 0.3);
+            padding-bottom: 8px;
+        }
+        
+        .instructions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .instruction-item {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        
+        .instruction-item h4 {
+            color: #ffcc80;
+            margin-bottom: 10px;
+        }
+        
+        .key {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 0 5px;
+            font-family: monospace;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 30px;
+            text-align: center;
+        }
+        
+        .player-role {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        
+        .player1-role {
+            background-color: rgba(244, 67, 54, 0.3);
+            color: #ff8a80;
+        }
+        
+        .player2-role {
+            background-color: rgba(33, 150, 243, 0.3);
+            color: #80d8ff;
+        }
+        
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .score-container, .time-container, .level-container, .high-score-container {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .game-settings {
+                flex-direction: column;
+            }
+            
+            .instructions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>合作逃離迷宮</h1>
+            <p class="subtitle">雙人合作解謎遊戲 - 一人探索迷宮，一人解決謎題</p>
+        </header>
+        
+        <div class="game-info">
+            <div class="score-container">
+                <div class="score-label">當前分數</div>
+                <div class="score-value" id="currentScore">0</div>
+            </div>
+            <div class="time-container">
+                <div class="time-label">剩餘時間</div>
+                <div class="time-value" id="timeLeft">300</div>
+            </div>
+            <div class="level-container">
+                <div class="level-label">當前關卡</div>
+                <div class="level-value" id="currentLevel">1</div>
+            </div>
+            <div class="high-score-container">
+                <div class="high-score-label">最高分數</div>
+                <div class="high-score-value" id="highScore">0</div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="player-section">
+                <div class="section-title">
+                    <span class="player-role player1-role">玩家1: 迷宮探索者</span>
+                </div>
+                <div class="maze-container">
+                    <canvas id="mazeCanvas" width="500" height="500"></canvas>
+                </div>
+                <div class="controls">
+                    <button class="control-btn" id="upBtn">↑</button>
+                    <button class="control-btn" id="leftBtn">←</button>
+                    <button class="control-btn" id="downBtn">↓</button>
+                    <button class="control-btn" id="rightBtn">→</button>
+                    <button class="control-btn" id="actionBtn">行動</button>
+                    <button class="control-btn" id="hintBtn">提示</button>
+                </div>
+            </div>
+            
+            <div class="player-section puzzle-section">
+                <div class="section-title">
+                    <span class="player-role player2-role">玩家2: 謎題破解者</span>
+                </div>
+                <div class="puzzle-container">
+                    <div class="puzzle-instruction" id="puzzleInstruction">
+                        請輸入4位數字密碼來解鎖迷宮中的門
+                    </div>
+                    <div class="puzzle-content">
+                        <div class="code-input">
+                            <input type="number" class="code-digit" max="9" min="0" id="digit1">
+                            <input type="number" class="code-digit" max="9" min="0" id="digit2">
+                            <input type="number" class="code-digit" max="9" min="0" id="digit3">
+                            <input type="number" class="code-digit" max="9" min="0" id="digit4">
+                        </div>
+                        <button class="puzzle-btn" id="submitCodeBtn">提交密碼</button>
+                    </div>
+                </div>
+                <div class="hint-container">
+                    <div class="hint-title">當前謎題提示</div>
+                    <div class="hint-text" id="puzzleHint">
+                        探索者需要在迷宮中找到密碼提示。密碼與迷宮中的符號有關。
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-status">
+            <div id="statusText">遊戲準備中... 請選擇難度並開始遊戲</div>
+        </div>
+        
+        <div class="game-settings">
+            <div class="difficulty-selector">
+                <div class="setting-label">遊戲難度</div>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn active" data-difficulty="easy">簡單</button>
+                    <button class="difficulty-btn" data-difficulty="normal">普通</button>
+                    <button class="difficulty-btn" data-difficulty="hard">困難</button>
+                </div>
+            </div>
+            <div class="game-controls">
+                <div class="setting-label">遊戲控制</div>
+                <div class="control-buttons">
+                    <button class="control-btn-main" id="startBtn">開始遊戲</button>
+                    <button class="control-btn-main" id="pauseBtn" disabled>暫停</button>
+                    <button class="control-btn-main reset" id="resetBtn">重置遊戲</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>遊戲說明與規則</h3>
+            <div class="instructions-grid">
+                <div class="instruction-item">
+                    <h4>遊戲目標</h4>
+                    <p>兩位玩家合作，在時間限制內通過所有關卡逃離迷宮。</p>
+                    <p>• 玩家1（探索者）：在迷宮中探索，尋找謎題線索</p>
+                    <p>• 玩家2（破解者）：根據線索解決謎題，幫助探索者前進</p>
+                    <p>• 每通過一關獲得積分，分數越高排名越高</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>玩家1控制</h4>
+                    <p><span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span class="key">→</span>: 在迷宮中移動</p>
+                    <p><span class="key">行動</span>: 與物體互動（門、線索等）</p>
+                    <p><span class="key">提示</span>: 請求謎題提示（會扣分）</p>
+                    <p><strong>鍵盤控制</strong>: 也可以使用方向鍵和空格鍵</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>難度說明</h4>
+                    <p>• <strong>簡單</strong>: 迷宮較小，謎題簡單，時間充足</p>
+                    <p>• <strong>普通</strong>: 中等大小迷宮，謎題有一定挑戰性</p>
+                    <p>• <strong>困難</strong>: 大型複雜迷宮，謎題困難，時間緊張</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>計分規則</h4>
+                    <p>• 通過一關: 1000 × 關卡數分</p>
+                    <p>• 剩餘時間: 每秒 = 10分</p>
+                    <p>• 使用提示: 每次 -200分</p>
+                    <p>• 合作獎勵: 快速通關有額外獎勵</p>
+                    <p>• 失敗扣分: 每關失敗 -500分</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>HTML5 合作解謎遊戲 - 使用Canvas和JavaScript實現 | 雙人合作，共同逃離迷宮</p>
+    </div>
+
+    <script>
+        // 遊戲變數
+        const mazeCanvas = document.getElementById('mazeCanvas');
+        const mazeCtx = mazeCanvas.getContext('2d');
+        const currentScoreElement = document.getElementById('currentScore');
+        const timeLeftElement = document.getElementById('timeLeft');
+        const currentLevelElement = document.getElementById('currentLevel');
+        const highScoreElement = document.getElementById('highScore');
+        const statusText = document.getElementById('statusText');
+        const puzzleInstruction = document.getElementById('puzzleInstruction');
+        const puzzleHint = document.getElementById('puzzleHint');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const codeDigits = [
+            document.getElementById('digit1'),
+            document.getElementById('digit2'),
+            document.getElementById('digit3'),
+            document.getElementById('digit4')
+        ];
+        const submitCodeBtn = document.getElementById('submitCodeBtn');
+        const upBtn = document.getElementById('upBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const downBtn = document.getElementById('downBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const actionBtn = document.getElementById('actionBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        
+        // 遊戲設定
+        const TILE_SIZE = 40;
+        const MAZE_WIDTH = 13;
+        const MAZE_HEIGHT = 13;
+        const PLAYER_SIZE = TILE_SIZE * 0.7;
+        
+        // 遊戲狀態
+        let maze = [];
+        let player = { x: 1, y: 1, direction: 0 };
+        let exit = { x: MAZE_WIDTH - 2, y: MAZE_HEIGHT - 2 };
+        let currentPuzzle = null;
+        let score = 0;
+        let level = 1;
+        let timeLeft = 300; // 5分鐘
+        let highScore = localStorage.getItem('coopPuzzleHighScore') || 0;
+        let gameActive = false;
+        let gamePaused = false;
+        let gameOver = false;
+        let difficulty = 'easy'; // 'easy', 'normal', 'hard'
+        let gameTimer = null;
+        let cluesFound = [];
+        let doors = [];
+        let items = [];
+        
+        // 根據難度設置遊戲參數
+        const difficultySettings = {
+            easy: { 
+                timePerLevel: 180, // 3分鐘每關
+                mazeComplexity: 0.3,
+                puzzleComplexity: 1
+            },
+            normal: { 
+                timePerLevel: 150, // 2.5分鐘每關
+                mazeComplexity: 0.4,
+                puzzleComplexity: 2
+            },
+            hard: { 
+                timePerLevel: 120, // 2分鐘每關
+                mazeComplexity: 0.5,
+                puzzleComplexity: 3
+            }
+        };
+        
+        // 謎題定義
+        const PUZZLES = [
+            {
+                id: 1,
+                type: 'code',
+                instruction: "輸入4位數字密碼來解鎖迷宮中的門",
+                hint: "探索者需要在迷宮中找到密碼提示。密碼與迷宮中的符號有關。",
+                solution: '1357',
+                clue: "密碼是奇數序列：1, 3, 5, 7"
+            },
+            {
+                id: 2,
+                type: 'math',
+                instruction: "解決數學問題：2 × ? + 8 = 20",
+                hint: "探索者需要找到數學方程式中的未知數。",
+                solution: '6',
+                clue: "答案是6 (2×6+8=20)"
+            },
+            {
+                id: 3,
+                type: 'sequence',
+                instruction: "完成序列：2, 4, 8, 16, ?",
+                hint: "每個數字是前一個數字的兩倍。",
+                solution: '32',
+                clue: "序列是2的次方：2¹, 2², 2³, 2⁴, 2⁵"
+            },
+            {
+                id: 4,
+                type: 'pattern',
+                instruction: "圖形密碼：▲, ■, ●, ▲, ■, ?",
+                hint: "探索者需要找到圖形序列中的下一個圖形。",
+                solution: '●',
+                clue: "圖形序列是三角形、正方形、圓形的重複"
+            },
+            {
+                id: 5,
+                type: 'riddle',
+                instruction: "我有鑰匙但打不開鎖，我有空間但沒有房間。我是什麼？",
+                hint: "探索者需要解開謎語。",
+                solution: '鍵盤',
+                clue: "想想電腦配件"
+            }
+        ];
+        
+        // 更新最高分顯示
+        highScoreElement.textContent = highScore;
+        
+        // 生成迷宮 (使用遞迴分割演算法)
+        function generateMaze() {
+            // 初始化迷宮，全部設為牆壁
+            maze = [];
+            for (let y = 0; y < MAZE_HEIGHT; y++) {
+                maze[y] = [];
+                for (let x = 0; x < MAZE_WIDTH; x++) {
+                    maze[y][x] = 1; // 1 = 牆壁
+                }
+            }
+            
+            // 使用遞迴分割演算法生成迷宮
+            divide(1, 1, MAZE_WIDTH - 2, MAZE_HEIGHT - 2);
+            
+            // 確保入口和出口是通路
+            maze[1][1] = 0; // 入口
+            maze[exit.y][exit.x] = 0; // 出口
+            
+            // 根據難度增加迷宮複雜度
+            addComplexity();
+            
+            // 生成門和物品
+            generateDoorsAndItems();
+            
+            // 確保有通往出口的路徑
+            ensurePathToExit();
+        }
+        
+        // 遞迴分割函數
+        function divide(x1, y1, x2, y2) {
+            const width = x2 - x1;
+            const height = y2 - y1;
+            
+            // 如果區域太小，停止分割
+            if (width < 3 || height < 3) return;
+            
+            // 隨機選擇分割方向 (水平或垂直)
+            const horizontal = Math.random() > 0.5;
+            
+            if (horizontal) {
+                // 水平分割
+                const wallY = y1 + Math.floor(Math.random() * (height - 2)) + 1;
+                const passageX = x1 + Math.floor(Math.random() * width);
+                
+                // 建立牆壁
+                for (let x = x1; x < x2; x++) {
+                    if (x !== passageX) {
+                        maze[wallY][x] = 1;
+                    }
+                }
+                
+                // 遞迴處理上下兩個區域
+                divide(x1, y1, x2, wallY);
+                divide(x1, wallY + 1, x2, y2);
+            } else {
+                // 垂直分割
+                const wallX = x1 + Math.floor(Math.random() * (width - 2)) + 1;
+                const passageY = y1 + Math.floor(Math.random() * height);
+                
+                // 建立牆壁
+                for (let y = y1; y < y2; y++) {
+                    if (y !== passageY) {
+                        maze[y][wallX] = 1;
+                    }
+                }
+                
+                // 遞迴處理左右兩個區域
+                divide(x1, y1, wallX, y2);
+                divide(wallX + 1, y1, x2, y2);
+            }
+        }
+        
+        // 增加迷宮複雜度 (根據難度)
+        function addComplexity() {
+            const settings = difficultySettings[difficulty];
+            const complexity = settings.mazeComplexity;
+            
+            // 隨機將一些牆壁轉為通路，增加複雜度
+            for (let i = 0; i < MAZE_WIDTH * MAZE_HEIGHT * complexity; i++) {
+                const x = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
+                const y = Math.floor(Math.random() * (MAZE_HEIGHT - 2)) + 1;
+                
+                // 確保不是入口或出口
+                if (!(x === 1 && y === 1) && !(x === exit.x && y === exit.y)) {
+                    maze[y][x] = 0;
+                }
+            }
+        }
+        
+        // 生成門和物品
+        function generateDoorsAndItems() {
+            doors = [];
+            items = [];
+            cluesFound = [];
+            
+            // 根據關卡生成門
+            const numDoors = Math.min(level, 3);
+            for (let i = 0; i < numDoors; i++) {
+                let doorX, doorY;
+                do {
+                    doorX = Math.floor(Math.random() * (MAZE_WIDTH - 4)) + 2;
+                    doorY = Math.floor(Math.random() * (MAZE_HEIGHT - 4)) + 2;
+                } while (maze[doorY][doorX] !== 0 || (doorX === 1 && doorY === 1) || 
+                        (doorX === exit.x && doorY === exit.y) || 
+                        doors.some(d => d.x === doorX && d.y === doorY));
+                
+                doors.push({
+                    x: doorX,
+                    y: doorY,
+                    locked: true,
+                    puzzleId: i % PUZZLES.length
+                });
+            }
+            
+            // 生成線索物品
+            for (let i = 0; i < numDoors; i++) {
+                let itemX, itemY;
+                do {
+                    itemX = Math.floor(Math.random() * (MAZE_WIDTH - 4)) + 2;
+                    itemY = Math.floor(Math.random() * (MAZE_HEIGHT - 4)) + 2;
+                } while (maze[itemY][itemX] !== 0 || (itemX === 1 && itemY === 1) || 
+                        (itemX === exit.x && itemY === exit.y) ||
+                        doors.some(d => d.x === itemX && d.y === itemY) ||
+                        items.some(it => it.x === itemX && it.y === itemY));
+                
+                items.push({
+                    x: itemX,
+                    y: itemY,
+                    type: 'clue',
+                    puzzleId: i % PUZZLES.length
+                });
+            }
+        }
+        
+        // 確保有通往出口的路徑
+        function ensurePathToExit() {
+            // 簡單的BFS檢查路徑
+            const visited = Array(MAZE_HEIGHT).fill().map(() => Array(MAZE_WIDTH).fill(false));
+            const queue = [{x: player.x, y: player.y}];
+            visited[player.y][player.x] = true;
+            
+            while (queue.length > 0) {
+                const current = queue.shift();
+                
+                // 如果到達出口，返回
+                if (current.x === exit.x && current.y === exit.y) {
+                    return true;
+                }
+                
+                // 檢查四個方向
+                const directions = [
+                    {dx: 1, dy: 0},
+                    {dx: -1, dy: 0},
+                    {dx: 0, dy: 1},
+                    {dx: 0, dy: -1}
+                ];
+                
+                for (const dir of directions) {
+                    const newX = current.x + dir.dx;
+                    const newY = current.y + dir.dy;
+                    
+                    if (newX >= 0 && newX < MAZE_WIDTH && newY >= 0 && newY < MAZE_HEIGHT &&
+                        maze[newY][newX] === 0 && !visited[newY][newX]) {
+                        visited[newY][newX] = true;
+                        queue.push({x: newX, y: newY});
+                    }
+                }
+            }
+            
+            // 如果沒有路徑，創建一條
+            createPathToExit();
+        }
+        
+        // 創建通往出口的路徑
+        function createPathToExit() {
+            let currentX = player.x;
+            let currentY = player.y;
+            
+            while (currentX !== exit.x || currentY !== exit.y) {
+                // 隨機選擇移動方向
+                if (Math.random() > 0.5) {
+                    // 水平移動
+                    if (currentX < exit.x) {
+                        currentX++;
+                    } else if (currentX > exit.x) {
+                        currentX--;
+                    }
+                } else {
+                    // 垂直移動
+                    if (currentY < exit.y) {
+                        currentY++;
+                    } else if (currentY > exit.y) {
+                        currentY--;
+                    }
+                }
+                
+                // 確保在迷宮範圍內
+                currentX = Math.max(1, Math.min(MAZE_WIDTH - 2, currentX));
+                currentY = Math.max(1, Math.min(MAZE_HEIGHT - 2, currentY));
+                
+                // 設置為通路
+                maze[currentY][currentX] = 0;
+            }
+        }
+        
+        // 繪製迷宮
+        function drawMaze() {
+            // 繪製背景
+            mazeCtx.fillStyle = '#0a1931';
+            mazeCtx.fillRect(0, 0, mazeCanvas.width, mazeCanvas.height);
+            
+            // 繪製迷宮
+            for (let y = 0; y < MAZE_HEIGHT; y++) {
+                for (let x = 0; x < MAZE_WIDTH; x++) {
+                    const tileX = x * TILE_SIZE;
+                    const tileY = y * TILE_SIZE;
+                    
+                    if (maze[y][x] === 1) {
+                        // 牆壁
+                        mazeCtx.fillStyle = '#1a3c6d';
+                        mazeCtx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        
+                        // 牆壁紋理
+                        mazeCtx.fillStyle = '#0f2b5a';
+                        mazeCtx.fillRect(tileX + 2, tileY + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    } else {
+                        // 通路
+                        mazeCtx.fillStyle = '#1e3d59';
+                        mazeCtx.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
+                        
+                        // 通路紋理
+                        mazeCtx.fillStyle = '#1a3c6d';
+                        mazeCtx.fillRect(tileX + 1, tileY + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+                    }
+                }
+            }
+            
+            // 繪製出口
+            const exitX = exit.x * TILE_SIZE;
+            const exitY = exit.y * TILE_SIZE;
+            mazeCtx.fillStyle = '#4caf50';
+            mazeCtx.beginPath();
+            mazeCtx.arc(exitX + TILE_SIZE/2, exitY + TILE_SIZE/2, TILE_SIZE/3, 0, Math.PI * 2);
+            mazeCtx.fill();
+            mazeCtx.strokeStyle = '#2e7d32';
+            mazeCtx.lineWidth = 2;
+            mazeCtx.stroke();
+            
+            // 繪製門
+            for (const door of doors) {
+                if (door.locked) {
+                    const doorX = door.x * TILE_SIZE;
+                    const doorY = door.y * TILE_SIZE;
+                    
+                    // 門框
+                    mazeCtx.fillStyle = '#8b4513';
+                    mazeCtx.fillRect(doorX + 5, doorY + 5, TILE_SIZE - 10, TILE_SIZE - 10);
+                    
+                    // 門
+                    mazeCtx.fillStyle = '#d2691e';
+                    mazeCtx.fillRect(doorX + 8, doorY + 8, TILE_SIZE - 16, TILE_SIZE - 16);
+                    
+                    // 鎖
+                    mazeCtx.fillStyle = '#ffd700';
+                    mazeCtx.beginPath();
+                    mazeCtx.arc(doorX + TILE_SIZE/2, doorY + TILE_SIZE/2, TILE_SIZE/8, 0, Math.PI * 2);
+                    mazeCtx.fill();
+                    
+                    // 門編號
+                    mazeCtx.fillStyle = '#fff';
+                    mazeCtx.font = 'bold 14px Arial';
+                    mazeCtx.textAlign = 'center';
+                    mazeCtx.textBaseline = 'middle';
+                    mazeCtx.fillText(door.puzzleId + 1, doorX + TILE_SIZE/2, doorY + TILE_SIZE/2);
+                }
+            }
+            
+            // 繪製物品
+            for (const item of items) {
+                const itemX = item.x * TILE_SIZE;
+                const itemY = item.y * TILE_SIZE;
+                
+                if (item.type === 'clue') {
+                    // 檢查是否已經被找到
+                    const isFound = cluesFound.some(clue => clue.puzzleId === item.puzzleId);
+                    
+                    if (!isFound) {
+                        // 線索物品 (卷軸)
+                        mazeCtx.fillStyle = '#ffeb3b';
+                        mazeCtx.beginPath();
+                        mazeCtx.ellipse(
+                            itemX + TILE_SIZE/2, 
+                            itemY + TILE_SIZE/2, 
+                            TILE_SIZE/4, 
+                            TILE_SIZE/3, 
+                            0, 0, Math.PI * 2
+                        );
+                        mazeCtx.fill();
+                        
+                        mazeCtx.fillStyle = '#ffc107';
+                        mazeCtx.beginPath();
+                        mazeCtx.ellipse(
+                            itemX + TILE_SIZE/2, 
+                            itemY + TILE_SIZE/2, 
+                            TILE_SIZE/5, 
+                            TILE_SIZE/4, 
+                            0, 0, Math.PI * 2
+                        );
+                        mazeCtx.fill();
+                        
+                        // 問號標記
+                        mazeCtx.fillStyle = '#000';
+                        mazeCtx.font = 'bold 16px Arial';
+                        mazeCtx.textAlign = 'center';
+                        mazeCtx.textBaseline = 'middle';
+                        mazeCtx.fillText("?", itemX + TILE_SIZE/2, itemY + TILE_SIZE/2);
+                    }
+                }
+            }
+            
+            // 繪製玩家
+            const playerX = player.x * TILE_SIZE + TILE_SIZE/2;
+            const playerY = player.y * TILE_SIZE + TILE_SIZE/2;
+            
+            // 玩家身體
+            mazeCtx.fillStyle = '#f44336';
+            mazeCtx.beginPath();
+            mazeCtx.arc(playerX, playerY, PLAYER_SIZE/2, 0, Math.PI * 2);
+            mazeCtx.fill();
+            
+            // 玩家邊框
+            mazeCtx.strokeStyle = '#d32f2f';
+            mazeCtx.lineWidth = 2;
+            mazeCtx.stroke();
+            
+            // 玩家方向指示器
+            mazeCtx.fillStyle = '#fff';
+            const directionX = playerX + Math.cos(player.direction) * PLAYER_SIZE/3;
+            const directionY = playerY + Math.sin(player.direction) * PLAYER_SIZE/3;
+            mazeCtx.beginPath();
+            mazeCtx.arc(directionX, directionY, PLAYER_SIZE/6, 0, Math.PI * 2);
+            mazeCtx.fill();
+            
+            // 繪製玩家視野範圍
+            drawPlayerFOV();
+        }
+        
+        // 繪製玩家視野範圍
+        function drawPlayerFOV() {
+            const playerX = player.x * TILE_SIZE + TILE_SIZE/2;
+            const playerY = player.y * TILE_SIZE + TILE_SIZE/2;
+            const fovRadius = TILE_SIZE * 3;
+            
+            // 創建視野漸變
+            const gradient = mazeCtx.createRadialGradient(
+                playerX, playerY, TILE_SIZE,
+                playerX, playerY, fovRadius
+            );
+            gradient.addColorStop(0, 'rgba(30, 144, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(30, 144, 255, 0)');
+            
+            mazeCtx.fillStyle = gradient;
+            mazeCtx.beginPath();
+            mazeCtx.arc(playerX, playerY, fovRadius, 0, Math.PI * 2);
+            mazeCtx.fill();
+        }
+        
+        // 移動玩家
+        function movePlayer(dx, dy) {
+            if (!gameActive || gamePaused || gameOver) return;
+            
+            const newX = player.x + dx;
+            const newY = player.y + dy;
+            
+            // 檢查是否在迷宮範圍內且不是牆壁
+            if (newX >= 0 && newX < MAZE_WIDTH && newY >= 0 && newY < MAZE_HEIGHT && 
+                maze[newY][newX] === 0) {
+                
+                // 更新玩家位置
+                player.x = newX;
+                player.y = newY;
+                
+                // 更新玩家方向
+                if (dx !== 0 || dy !== 0) {
+                    player.direction = Math.atan2(dy, dx);
+                }
+                
+                // 檢查是否到達出口
+                if (player.x === exit.x && player.y === exit.y) {
+                    completeLevel();
+                    return;
+                }
+                
+                // 檢查是否碰到門
+                checkDoorInteraction();
+                
+                // 檢查是否找到線索
+                checkItemCollection();
+                
+                // 重繪迷宮
+                drawMaze();
+            }
+        }
+        
+        // 檢查門互動
+        function checkDoorInteraction() {
+            for (const door of doors) {
+                if (door.x === player.x && door.y === player.y && door.locked) {
+                    // 設置當前謎題
+                    currentPuzzle = PUZZLES[door.puzzleId];
+                    puzzleInstruction.textContent = currentPuzzle.instruction;
+                    puzzleHint.textContent = currentPuzzle.hint;
+                    
+                    // 更新狀態
+                    statusText.textContent = `遇到鎖住的門！需要解決謎題 ${door.puzzleId + 1}`;
+                    
+                    // 啟用密碼輸入
+                    codeDigits.forEach(digit => {
+                        digit.disabled = false;
+                        digit.value = '';
+                    });
+                    submitCodeBtn.disabled = false;
+                    
+                    return;
+                }
+            }
+        }
+        
+        // 檢查物品收集
+        function checkItemCollection() {
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                if (item.x === player.x && item.y === player.y) {
+                    // 檢查是否已經找到過這個線索
+                    if (!cluesFound.some(clue => clue.puzzleId === item.puzzleId)) {
+                        // 找到新線索
+                        const puzzle = PUZZLES[item.puzzleId];
+                        cluesFound.push({
+                            puzzleId: item.puzzleId,
+                            clue: puzzle.clue
+                        });
+                        
+                        // 顯示線索
+                        statusText.textContent = `找到線索：${puzzle.clue}`;
+                        
+                        // 移除物品
+                        items.splice(i, 1);
+                        
+                        // 加分
+                        score += 100;
+                        currentScoreElement.textContent = score;
+                        
+                        // 重繪迷宮
+                        drawMaze();
+                    }
+                }
+            }
+        }
+        
+        // 行動按鈕功能
+        function performAction() {
+            if (!gameActive || gamePaused || gameOver) return;
+            
+            // 檢查前方是否有門
+            const forwardX = Math.round(player.x + Math.cos(player.direction));
+            const forwardY = Math.round(player.y + Math.sin(player.direction));
+            
+            for (const door of doors) {
+                if (door.x === forwardX && door.y === forwardY) {
+                    // 設置當前謎題
+                    currentPuzzle = PUZZLES[door.puzzleId];
+                    puzzleInstruction.textContent = currentPuzzle.instruction;
+                    puzzleHint.textContent = currentPuzzle.hint;
+                    
+                    // 更新狀態
+                    statusText.textContent = `遇到鎖住的門！需要解決謎題 ${door.puzzleId + 1}`;
+                    
+                    // 啟用密碼輸入
+                    codeDigits.forEach(digit => {
+                        digit.disabled = false;
+                        digit.value = '';
+                    });
+                    submitCodeBtn.disabled = false;
+                    
+                    return;
+                }
+            }
+            
+            statusText.textContent = "前方沒有可互動的物體";
+        }
+        
+        // 提交密碼
+        function submitCode() {
+            if (!currentPuzzle) return;
+            
+            // 組合密碼
+            const code = codeDigits.map(digit => digit.value).join('');
+            
+            // 檢查密碼
+            if (code === currentPuzzle.solution) {
+                // 密碼正確，解鎖所有對應的門
+                const puzzleId = currentPuzzle.id - 1;
+                doors.forEach(door => {
+                    if (door.puzzleId === puzzleId) {
+                        door.locked = false;
+                    }
+                });
+                
+                // 更新狀態
+                statusText.textContent = "密碼正確！門已解鎖";
+                statusText.classList.add('game-success');
+                setTimeout(() => statusText.classList.remove('game-success'), 1000);
+                
+                // 加分
+                score += 500;
+                currentScoreElement.textContent = score;
+                
+                // 重置謎題界面
+                currentPuzzle = null;
+                puzzleInstruction.textContent = "等待下一個謎題...";
+                puzzleHint.textContent = "探索者需要在迷宮中找到新的謎題";
+                
+                // 禁用密碼輸入
+                codeDigits.forEach(digit => {
+                    digit.disabled = true;
+                    digit.value = '';
+                });
+                submitCodeBtn.disabled = true;
+                
+                // 重繪迷宮
+                drawMaze();
+            } else {
+                // 密碼錯誤
+                statusText.textContent = "密碼錯誤，請再試一次";
+                statusText.classList.add('game-over');
+                setTimeout(() => statusText.classList.remove('game-over'), 1000);
+                
+                // 扣分
+                score = Math.max(0, score - 50);
+                currentScoreElement.textContent = score;
+            }
+        }
+        
+        // 請求提示
+        function requestHint() {
+            if (!gameActive || gamePaused || gameOver || !currentPuzzle) return;
+            
+            // 檢查是否有相關線索
+            const puzzleId = currentPuzzle.id - 1;
+            const clue = cluesFound.find(c => c.puzzleId === puzzleId);
+            
+            if (clue) {
+                puzzleHint.textContent = clue.clue;
+                statusText.textContent = "已顯示線索提示";
+            } else {
+                statusText.textContent = "尚未找到相關線索，繼續探索迷宮";
+            }
+            
+            // 扣分
+            score = Math.max(0, score - 200);
+            currentScoreElement.textContent = score;
+        }
+        
+        // 完成關卡
+        function completeLevel() {
+            // 計算時間獎勵
+            const timeBonus = timeLeft * 10;
+            score += 1000 * level + timeBonus;
+            currentScoreElement.textContent = score;
+            
+            // 更新最高分
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.textContent = highScore;
+                localStorage.setItem('coopPuzzleHighScore', highScore);
+            }
+            
+            // 顯示過關訊息
+            statusText.textContent = `恭喜！通過第${level}關！獲得${1000 * level + timeBonus}分`;
+            statusText.classList.add('game-success');
+            
+            // 進入下一關或結束遊戲
+            if (level < 5) {
+                setTimeout(() => {
+                    level++;
+                    currentLevelElement.textContent = level;
+                    
+                    // 重置時間
+                    const settings = difficultySettings[difficulty];
+                    timeLeft = settings.timePerLevel;
+                    timeLeftElement.textContent = timeLeft;
+                    
+                    // 生成新迷宮
+                    generateMaze();
+                    drawMaze();
+                    
+                    // 重置狀態
+                    statusText.textContent = `第${level}關開始！`;
+                    statusText.classList.remove('game-success');
+                    
+                    // 重置謎題界面
+                    currentPuzzle = null;
+                    puzzleInstruction.textContent = "等待下一個謎題...";
+                    puzzleHint.textContent = "探索者需要在迷宮中找到新的謎題";
+                    
+                    codeDigits.forEach(digit => {
+                        digit.disabled = true;
+                        digit.value = '';
+                    });
+                    submitCodeBtn.disabled = true;
+                }, 2000);
+            } else {
+                // 遊戲通關
+                endGame(true);
+            }
+        }
+        
+        // 遊戲計時器
+        function updateTimer() {
+            if (!gameActive || gamePaused || gameOver) return;
+            
+            timeLeft--;
+            timeLeftElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame(false);
+            } else if (timeLeft <= 30) {
+                // 最後30秒警告
+                timeLeftElement.style.color = '#ff5252';
+                if (timeLeft <= 10) {
+                    timeLeftElement.style.animation = 'pulse 0.5s infinite';
+                }
+            }
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            if (gameActive && !gamePaused) return;
+            
+            // 初始化遊戲狀態
+            score = 0;
+            level = 1;
+            const settings = difficultySettings[difficulty];
+            timeLeft = settings.timePerLevel;
+            
+            currentScoreElement.textContent = score;
+            currentLevelElement.textContent = level;
+            timeLeftElement.textContent = timeLeft;
+            timeLeftElement.style.color = '#ffcc80';
+            timeLeftElement.style.animation = '';
+            
+            // 生成迷宮
+            generateMaze();
+            
+            // 重置玩家位置
+            player.x = 1;
+            player.y = 1;
+            player.direction = 0;
+            
+            // 設置遊戲狀態
+            gameActive = true;
+            gamePaused = false;
+            gameOver = false;
+            
+            startBtn.textContent = '重新開始';
+            pauseBtn.disabled = false;
+            pauseBtn.textContent = '暫停';
+            
+            statusText.textContent = '遊戲開始！探索迷宮，找到出口';
+            statusText.classList.remove('game-over', 'game-success');
+            
+            // 重置謎題界面
+            currentPuzzle = null;
+            puzzleInstruction.textContent = "等待下一個謎題...";
+            puzzleHint.textContent = "探索者需要在迷宮中找到新的謎題";
+            
+            codeDigits.forEach(digit => {
+                digit.disabled = true;
+                digit.value = '';
+            });
+            submitCodeBtn.disabled = true;
+            
+            // 繪製迷宮
+            drawMaze();
+            
+            // 啟動計時器
+            clearInterval(gameTimer);
+            gameTimer = setInterval(updateTimer, 1000);
+        }
+        
+        // 暫停/繼續遊戲
+        function togglePause() {
+            if (!gameActive || gameOver) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                clearInterval(gameTimer);
+                pauseBtn.textContent = '繼續';
+                statusText.textContent = '遊戲已暫停';
+            } else {
+                gameTimer = setInterval(updateTimer, 1000);
+                pauseBtn.textContent = '暫停';
+                statusText.textContent = '遊戲繼續';
+            }
+        }
+        
+        // 結束遊戲
+        function endGame(success) {
+            gameActive = false;
+            gameOver = true;
+            
+            clearInterval(gameTimer);
+            
+            if (success) {
+                statusText.textContent = `恭喜通關！最終分數: ${score}`;
+                statusText.classList.add('game-success');
+            } else {
+                statusText.textContent = `時間到！遊戲結束。最終分數: ${score}`;
+                statusText.classList.add('game-over');
+            }
+            
+            pauseBtn.disabled = true;
+        }
+        
+        // 重置遊戲
+        function resetGame() {
+            clearInterval(gameTimer);
+            
+            gameActive = false;
+            gamePaused = false;
+            gameOver = false;
+            
+            startBtn.textContent = '開始遊戲';
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = '暫停';
+            
+            statusText.textContent = '遊戲準備中... 請選擇難度並開始遊戲';
+            statusText.classList.remove('game-over', 'game-success');
+            
+            // 生成迷宮但不開始遊戲
+            generateMaze();
+            drawMaze();
+            
+            // 重置謎題界面
+            currentPuzzle = null;
+            puzzleInstruction.textContent = "請輸入4位數字密碼來解鎖迷宮中的門";
+            puzzleHint.textContent = "探索者需要在迷宮中找到密碼提示。密碼與迷宮中的符號有關。";
+            
+            codeDigits.forEach(digit => {
+                digit.disabled = true;
+                digit.value = '';
+            });
+            submitCodeBtn.disabled = true;
+        }
+        
+        // 事件監聽器
+        startBtn.addEventListener('click', startGame);
+        
+        pauseBtn.addEventListener('click', togglePause);
+        
+        resetBtn.addEventListener('click', resetGame);
+        
+        // 難度選擇
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // 更新按鈕狀態
+                difficultyButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // 更新難度
+                difficulty = button.getAttribute('data-difficulty');
+                
+                // 重置遊戲
+                resetGame();
+            });
+        });
+        
+        // 提交密碼按鈕
+        submitCodeBtn.addEventListener('click', submitCode);
+        
+        // 控制按鈕
+        upBtn.addEventListener('click', () => movePlayer(0, -1));
+        leftBtn.addEventListener('click', () => movePlayer(-1, 0));
+        downBtn.addEventListener('click', () => movePlayer(0, 1));
+        rightBtn.addEventListener('click', () => movePlayer(1, 0));
+        actionBtn.addEventListener('click', performAction);
+        hintBtn.addEventListener('click', requestHint);
+        
+        // 鍵盤控制
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive || gamePaused || gameOver) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    movePlayer(0, -1);
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    movePlayer(-1, 0);
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    movePlayer(0, 1);
+                    e.preventDefault();
+                    break;
+                    
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    movePlayer(1, 0);
+                    e.preventDefault();
+                    break;
+                    
+                case ' ':
+                    performAction();
+                    e.preventDefault();
+                    break;
+                    
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+                    
+                case 'h':
+                case 'H':
+                    requestHint();
+                    break;
+            }
+        });
+        
+        // 密碼輸入框控制
+        codeDigits.forEach((digit, index) => {
+            digit.addEventListener('input', () => {
+                // 限制為單個數字
+                if (digit.value.length > 1) {
+                    digit.value = digit.value.slice(0, 1);
+                }
+                
+                // 自動跳到下一個輸入框
+                if (digit.value !== '' && index < codeDigits.length - 1) {
+                    codeDigits[index + 1].focus();
+                }
+            });
+            
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    submitCode();
+                } else if (e.key === 'Backspace' && digit.value === '' && index > 0) {
+                    codeDigits[index - 1].focus();
+                }
+            });
+        });
+        
+        // 初始化遊戲
+        function initGame() {
+            // 設置canvas大小
+            function resizeCanvas() {
+                const container = document.querySelector('.maze-container');
+                const size = Math.min(container.clientWidth, 500);
+                mazeCanvas.width = size;
+                mazeCanvas.height = size;
+                
+                // 重新計算方塊大小
+                TILE_SIZE = size / MAZE_WIDTH;
+                PLAYER_SIZE = TILE_SIZE * 0.7;
+                
+                // 重繪迷宮
+                drawMaze();
+            }
+            
+            // 初始調整canvas大小
+            resizeCanvas();
+            
+            // 監聽窗口大小變化
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 初始化遊戲
+            resetGame();
+        }
+        
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>

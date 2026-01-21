@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 大富翁遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a472a, #2a623d, #5d8c5a);
+            color: #fff;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            color: #ffd700;
+            text-shadow: 3px 3px 0 #8b4513, 6px 6px 0 rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ffefb5;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 30px;
+        }
+        
+        .board-section {
+            flex: 1;
+            min-width: 800px;
+            max-width: 800px;
+        }
+        
+        .controls-section {
+            flex: 1;
+            min-width: 350px;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        #gameBoard {
+            border: 8px solid #8b4513;
+            border-radius: 5px;
+            background-color: #e8f4e8;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .control-panel {
+            background: rgba(26, 71, 42, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #ffd700;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ffd700;
+            text-align: center;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 8px;
+        }
+        
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .difficulty-btn {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            border-radius: 8px;
+            background-color: #2a623d;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .difficulty-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .difficulty-btn.active {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+            border: 2px solid #ffd700;
+        }
+        
+        .easy { background-color: #2ecc71; }
+        .normal { background-color: #3498db; }
+        .hard { background-color: #e74c3c; }
+        
+        .game-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+        
+        .info-label {
+            color: #ffefb5;
+            font-weight: bold;
+        }
+        
+        .info-value {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .player-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .player-status {
+            background: rgba(42, 98, 61, 0.8);
+            border-radius: 8px;
+            padding: 10px;
+            border-left: 4px solid;
+        }
+        
+        .player-1 { border-color: #ff5252; }
+        .player-2 { border-color: #448aff; }
+        .player-3 { border-color: #69f0ae; }
+        .player-4 { border-color: #ffab40; }
+        
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .player-money {
+            color: #ffd700;
+            font-size: 1.1rem;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to bottom, #ffd700, #ffaa00);
+            color: #8b4513;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to bottom, #ffe44d, #ffbb33);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-roll {
+            background: linear-gradient(to bottom, #ff5252, #d32f2f);
+            color: white;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-roll:hover {
+            background: linear-gradient(to bottom, #ff6e6e, #d32f2f);
+        }
+        
+        .btn-buy {
+            background: linear-gradient(to bottom, #4caf50, #2e7d32);
+            color: white;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-buy:hover {
+            background: linear-gradient(to bottom, #66bb6a, #2e7d32);
+        }
+        
+        .btn-end {
+            background: linear-gradient(to bottom, #448aff, #2962ff);
+            color: white;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-end:hover {
+            background: linear-gradient(to bottom, #6ba3ff, #2962ff);
+        }
+        
+        .event-log {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+            border: 2px solid #ffd700;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
+            color: #f0f0f0;
+            font-size: 0.9rem;
+        }
+        
+        .log-player-1 { color: #ff5252; }
+        .log-player-2 { color: #448aff; }
+        .log-player-3 { color: #69f0ae; }
+        .log-player-4 { color: #ffab40; }
+        
+        .instructions {
+            max-width: 1200px;
+            background: rgba(26, 71, 42, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            border: 3px solid #ffd700;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+        
+        .instructions h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        
+        .instructions-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .instruction-section {
+            background: rgba(42, 98, 61, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .instruction-section h4 {
+            color: #ffefb5;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.5);
+            padding-bottom: 5px;
+        }
+        
+        .instruction-section ul {
+            padding-left: 20px;
+            color: #f0f0f0;
+        }
+        
+        .instruction-section li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .game-over-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(to bottom, #1a472a, #0d2818);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            border: 5px solid #ffd700;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+        }
+        
+        .modal-title {
+            color: #ffd700;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #8b4513;
+        }
+        
+        .winner-name {
+            font-size: 2rem;
+            color: #ffefb5;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border: 2px solid #ffd700;
+        }
+        
+        .modal-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 25px 0;
+        }
+        
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            color: #ffefb5;
+            margin-top: 5px;
+        }
+        
+        .new-high-score {
+            color: #ff5252;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 1200px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .board-section, .controls-section {
+                min-width: 100%;
+                max-width: 100%;
+            }
+            
+            #gameBoard {
+                width: 100%;
+                height: auto;
+            }
+        }
+        
+        @media (max-width: 850px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .board-section {
+                min-width: 100%;
+            }
+            
+            #gameBoard {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>HTML5 大富翁</h1>
+        <div class="subtitle">擲骰子、買地產、成為最富有的人！</div>
+    </header>
+    
+    <div class="game-container">
+        <div class="board-section">
+            <canvas id="gameBoard" width="800" height="800"></canvas>
+        </div>
+        
+        <div class="controls-section">
+            <div class="control-panel">
+                <div class="panel-title">遊戲設定</div>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn easy active" data-difficulty="easy">簡單</button>
+                    <button class="difficulty-btn normal" data-difficulty="normal">普通</button>
+                    <button class="difficulty-btn hard" data-difficulty="hard">困難</button>
+                </div>
+                
+                <div class="game-info">
+                    <div class="info-row">
+                        <span class="info-label">目前玩家:</span>
+                        <span class="info-value" id="current-player">玩家 1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">回合:</span>
+                        <span class="info-value" id="turn">1</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">骰子結果:</span>
+                        <span class="info-value" id="dice-result">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">最高分:</span>
+                        <span class="info-value" id="high-score">0</span>
+                    </div>
+                </div>
+                
+                <div class="player-info">
+                    <div class="player-status player-1">
+                        <div class="player-name">玩家 1</div>
+                        <div class="player-money">$<span id="player1-money">1500</span></div>
+                        <div class="player-properties" id="player1-properties">地產: 0</div>
+                    </div>
+                    <div class="player-status player-2">
+                        <div class="player-name">玩家 2</div>
+                        <div class="player-money">$<span id="player2-money">1500</span></div>
+                        <div class="player-properties" id="player2-properties">地產: 0</div>
+                    </div>
+                    <div class="player-status player-3">
+                        <div class="player-name">玩家 3</div>
+                        <div class="player-money">$<span id="player3-money">1500</span></div>
+                        <div class="player-properties" id="player3-properties">地產: 0</div>
+                    </div>
+                    <div class="player-status player-4">
+                        <div class="player-name">玩家 4</div>
+                        <div class="player-money">$<span id="player4-money">1500</span></div>
+                        <div class="player-properties" id="player4-properties">地產: 0</div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button class="btn btn-roll" id="roll-dice">擲骰子</button>
+                    <button class="btn btn-buy" id="buy-property" disabled>購買地產</button>
+                    <button class="btn btn-end" id="end-turn" disabled>結束回合</button>
+                    <button class="btn" id="new-game">新遊戲</button>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                <div class="panel-title">遊戲事件</div>
+                <div class="event-log" id="event-log">
+                    <div class="log-entry">遊戲開始！玩家 1 先開始。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>遊戲說明</h3>
+        <div class="instructions-content">
+            <div class="instruction-section">
+                <h4>遊戲目標</h4>
+                <ul>
+                    <li>成為最後一位未破產的玩家</li>
+                    <li>透過購買地產、收取租金累積財富</li>
+                    <li>破產的玩家將退出遊戲</li>
+                    <li>遊戲結束時根據總資產計算分數</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-section">
+                <h4>遊戲規則</h4>
+                <ul>
+                    <li>輪流擲骰子並移動對應步數</li>
+                    <li>停留在無人擁有的地產時可以購買</li>
+                    <li>停留在他人地產時需支付租金</li>
+                    <li>停留在機會格時抽取機會卡</li>
+                    <li>經過起點時可領取 $200</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-section">
+                <h4>難度說明</h4>
+                <ul>
+                    <li><span class="highlight">簡單</span>: 起始資金 $2000，租金較低</li>
+                    <li><span class="highlight">普通</span>: 起始資金 $1500，租金正常</li>
+                    <li><span class="highlight">困難</span>: 起始資金 $1000，租金較高</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-over-modal" id="game-over-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">遊戲結束</h2>
+            <div class="winner-name" id="winner-name">玩家 1 獲勝！</div>
+            
+            <div class="modal-stats">
+                <div class="stat">
+                    <div class="stat-value" id="final-score">0</div>
+                    <div class="stat-label">最終分數</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="total-turns">0</div>
+                    <div class="stat-label">總回合數</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="total-properties">0</div>
+                    <div class="stat-label">總地產數</div>
+                </div>
+            </div>
+            
+            <div class="new-high-score" id="new-high-score" style="display:none">新最高分！</div>
+            
+            <button class="btn" id="play-again">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲變數
+        const canvas = document.getElementById('gameBoard');
+        const ctx = canvas.getContext('2d');
+        const diceResultElement = document.getElementById('dice-result');
+        const currentPlayerElement = document.getElementById('current-player');
+        const turnElement = document.getElementById('turn');
+        const highScoreElement = document.getElementById('high-score');
+        const eventLogElement = document.getElementById('event-log');
+        const rollDiceButton = document.getElementById('roll-dice');
+        const buyPropertyButton = document.getElementById('buy-property');
+        const endTurnButton = document.getElementById('end-turn');
+        const newGameButton = document.getElementById('new-game');
+        const playAgainButton = document.getElementById('play-again');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        
+        // 遊戲狀態
+        let game = {
+            players: [],
+            currentPlayerIndex: 0,
+            turn: 1,
+            diceValue: 0,
+            gameStarted: false,
+            gameOver: false,
+            properties: [],
+            chanceCards: [],
+            communityChestCards: [],
+            difficulty: 'easy',
+            highScore: localStorage.getItem('monopolyHighScore') || 0,
+            canBuyProperty: false,
+            currentPropertyIndex: -1
+        };
+        
+        // 初始化最高分顯示
+        highScoreElement.textContent = game.highScore;
+        
+        // 難度設置
+        const difficultySettings = {
+            easy: {
+                startingMoney: 2000,
+                rentMultiplier: 0.8,
+                propertyPriceMultiplier: 0.9,
+                aiAggressiveness: 0.3, // AI攻擊性 (0-1)
+                passGoMoney: 200
+            },
+            normal: {
+                startingMoney: 1500,
+                rentMultiplier: 1.0,
+                propertyPriceMultiplier: 1.0,
+                aiAggressiveness: 0.5,
+                passGoMoney: 200
+            },
+            hard: {
+                startingMoney: 1000,
+                rentMultiplier: 1.2,
+                propertyPriceMultiplier: 1.1,
+                aiAggressiveness: 0.8,
+                passGoMoney: 200
+            }
+        };
+        
+        // 玩家類別
+        class Player {
+            constructor(id, name, color, isAI = false) {
+                this.id = id;
+                this.name = name;
+                this.color = color;
+                this.money = 1500;
+                this.position = 0;
+                this.properties = [];
+                this.isAI = isAI;
+                this.inJail = false;
+                this.jailTurns = 0;
+                this.bankrupt = false;
+                this.totalAssets = 0;
+            }
+            
+            // 計算總資產
+            calculateAssets() {
+                let total = this.money;
+                this.properties.forEach(prop => {
+                    total += prop.price;
+                    if (prop.houses > 0) {
+                        total += prop.housePrice * prop.houses;
+                    }
+                });
+                this.totalAssets = total;
+                return total;
+            }
+        }
+        
+        // 地產類別
+        class Property {
+            constructor(id, name, color, price, rent, housePrice, group) {
+                this.id = id;
+                this.name = name;
+                this.color = color;
+                this.price = price;
+                this.baseRent = rent;
+                this.housePrice = housePrice;
+                this.group = group;
+                this.owner = null;
+                this.houses = 0;
+                this.mortgaged = false;
+            }
+            
+            // 計算租金
+            getRent() {
+                if (this.mortgaged) return 0;
+                
+                let rent = this.baseRent;
+                if (this.houses > 0) {
+                    // 每棟房子增加租金
+                    rent = this.baseRent * (1 + this.houses * 0.5);
+                }
+                
+                // 應用難度乘數
+                const settings = difficultySettings[game.difficulty];
+                return Math.round(rent * settings.rentMultiplier);
+            }
+            
+            // 計算購買價格
+            getPrice() {
+                const settings = difficultySettings[game.difficulty];
+                return Math.round(this.price * settings.propertyPriceMultiplier);
+            }
+        }
+        
+        // 機會卡類別
+        class ChanceCard {
+            constructor(text, action) {
+                this.text = text;
+                this.action = action;
+            }
+        }
+        
+        // 初始化遊戲
+        function initGame() {
+            // 重置遊戲狀態
+            game.players = [];
+            game.currentPlayerIndex = 0;
+            game.turn = 1;
+            game.diceValue = 0;
+            game.gameStarted = true;
+            game.gameOver = false;
+            game.properties = [];
+            game.canBuyProperty = false;
+            game.currentPropertyIndex = -1;
+            
+            // 初始化玩家
+            const playerColors = ['#ff5252', '#448aff', '#69f0ae', '#ffab40'];
+            const playerNames = ['玩家 1', '玩家 2', '玩家 3', '玩家 4'];
+            
+            // 根據難度設置起始資金
+            const settings = difficultySettings[game.difficulty];
+            
+            for (let i = 0; i < 4; i++) {
+                const player = new Player(i+1, playerNames[i], playerColors[i], i > 0); // 玩家2-4是AI
+                player.money = settings.startingMoney;
+                game.players.push(player);
+                
+                // 更新UI顯示
+                document.getElementById(`player${i+1}-money`).textContent = player.money;
+                document.getElementById(`player${i+1}-properties`).textContent = '地產: 0';
+            }
+            
+            // 初始化地產
+            initProperties();
+            
+            // 初始化機會卡
+            initChanceCards();
+            
+            // 更新UI
+            updateUI();
+            
+            // 清空事件日誌
+            eventLogElement.innerHTML = '<div class="log-entry">遊戲開始！玩家 1 先開始。</div>';
+            
+            // 繪製遊戲板
+            drawBoard();
+            
+            // 啟用/禁用按鈕
+            rollDiceButton.disabled = false;
+            buyPropertyButton.disabled = true;
+            endTurnButton.disabled = true;
+            
+            // 隱藏遊戲結束畫面
+            gameOverModal.style.display = 'none';
+            
+            // 添加日誌
+            addLogEntry(`新遊戲開始！難度: ${game.difficulty === 'easy' ? '簡單' : game.difficulty === 'normal' ? '普通' : '困難'}`, 'system');
+        }
+        
+        // 初始化地產
+        function initProperties() {
+            // 清除現有地產
+            game.properties = [];
+            
+            // 定義地產數據
+            const propertyData = [
+                // 棕色組
+                { id: 1, name: '地中海', color: '#8b4513', price: 60, rent: 2, housePrice: 50, group: 'brown' },
+                { id: 3, name: '北疆', color: '#8b4513', price: 60, rent: 4, housePrice: 50, group: 'brown' },
+                
+                // 淺藍色組
+                { id: 6, name: '台北', color: '#87ceeb', price: 100, rent: 6, housePrice: 80, group: 'lightblue' },
+                { id: 8, name: '台中', color: '#87ceeb', price: 100, rent: 6, housePrice: 80, group: 'lightblue' },
+                { id: 9, name: '台南', color: '#87ceeb', price: 120, rent: 8, housePrice: 80, group: 'lightblue' },
+                
+                // 粉紅色組
+                { id: 11, name: '新竹', color: '#ff69b4', price: 140, rent: 10, housePrice: 100, group: 'pink' },
+                { id: 13, name: '苗栗', color: '#ff69b4', price: 140, rent: 10, housePrice: 100, group: 'pink' },
+                { id: 14, name: '彰化', color: '#ff69b4', price: 160, rent: 12, housePrice: 100, group: 'pink' },
+                
+                // 橙色組
+                { id: 16, name: '高雄', color: '#ff8c00', price: 180, rent: 14, housePrice: 120, group: 'orange' },
+                { id: 18, name: '屏東', color: '#ff8c00', price: 180, rent: 14, housePrice: 120, group: 'orange' },
+                { id: 19, name: '台東', color: '#ff8c00', price: 200, rent: 16, housePrice: 120, group: 'orange' },
+                
+                // 紅色組
+                { id: 21, name: '花蓮', color: '#ff0000', price: 220, rent: 18, housePrice: 150, group: 'red' },
+                { id: 23, name: '宜蘭', color: '#ff0000', price: 220, rent: 18, housePrice: 150, group: 'red' },
+                { id: 24, name: '基隆', color: '#ff0000', price: 240, rent: 20, housePrice: 150, group: 'red' },
+                
+                // 黃色組
+                { id: 26, name: '桃園', color: '#ffff00', price: 260, rent: 22, housePrice: 150, group: 'yellow' },
+                { id: 27, name: '嘉義', color: '#ffff00', price: 260, rent: 22, housePrice: 150, group: 'yellow' },
+                { id: 29, name: '雲林', color: '#ffff00', price: 280, rent: 24, housePrice: 150, group: 'yellow' },
+                
+                // 綠色組
+                { id: 31, name: '南投', color: '#00ff00', price: 300, rent: 26, housePrice: 200, group: 'green' },
+                { id: 32, name: '澎湖', color: '#00ff00', price: 300, rent: 26, housePrice: 200, group: 'green' },
+                { id: 34, name: '金門', color: '#00ff00', price: 320, rent: 28, housePrice: 200, group: 'green' },
+                
+                // 深藍色組
+                { id: 37, name: '馬祖', color: '#0000ff', price: 350, rent: 35, housePrice: 200, group: 'darkblue' },
+                { id: 39, name: '蘭嶼', color: '#0000ff', price: 400, rent: 50, housePrice: 200, group: 'darkblue' }
+            ];
+            
+            // 創建地產物件
+            propertyData.forEach(data => {
+                const property = new Property(
+                    data.id,
+                    data.name,
+                    data.color,
+                    data.price,
+                    data.rent,
+                    data.housePrice,
+                    data.group
+                );
+                game.properties.push(property);
+            });
+        }
+        
+        // 初始化機會卡
+        function initChanceCards() {
+            game.chanceCards = [
+                new ChanceCard("銀行付你股息 $50", (player) => {
+                    player.money += 50;
+                    addLogEntry(`${player.name} 獲得銀行股息 $50`, 'chance');
+                }),
+                new ChanceCard("前進到起點", (player) => {
+                    player.position = 0;
+                    player.money += difficultySettings[game.difficulty].passGoMoney;
+                    addLogEntry(`${player.name} 前進到起點，獲得 $${difficultySettings[game.difficulty].passGoMoney}`, 'chance');
+                }),
+                new ChanceCard("繳納學費 $150", (player) => {
+                    player.money -= 150;
+                    addLogEntry(`${player.name} 繳納學費 $150`, 'chance');
+                }),
+                new ChanceCard("你的生日，每位玩家給你 $10", (player) => {
+                    let total = 0;
+                    game.players.forEach(p => {
+                        if (p.id !== player.id && !p.bankrupt) {
+                            p.money -= 10;
+                            total += 10;
+                        }
+                    });
+                    player.money += total;
+                    addLogEntry(`${player.name} 生日，獲得每位玩家 $10，共 $${total}`, 'chance');
+                }),
+                new ChanceCard("前進五格", (player) => {
+                    player.position = (player.position + 5) % 40;
+                    addLogEntry(`${player.name} 前進五格`, 'chance');
+                    checkLanding(player);
+                })
+            ];
+        }
+        
+        // 設置難度
+        function setDifficulty(difficulty) {
+            game.difficulty = difficulty;
+            
+            // 更新按鈕狀態
+            difficultyButtons.forEach(btn => {
+                if (btn.dataset.difficulty === difficulty) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 如果遊戲已開始，重新初始化
+            if (game.gameStarted && !game.gameOver) {
+                initGame();
+            }
+        }
+        
+        // 更新UI
+        function updateUI() {
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            
+            // 更新玩家資訊
+            currentPlayerElement.textContent = currentPlayer.name;
+            turnElement.textContent = game.turn;
+            highScoreElement.textContent = game.highScore;
+            
+            // 更新玩家狀態
+            game.players.forEach((player, index) => {
+                const moneyElement = document.getElementById(`player${index+1}-money`);
+                const propertiesElement = document.getElementById(`player${index+1}-properties`);
+                
+                if (moneyElement) {
+                    moneyElement.textContent = player.money;
+                }
+                
+                if (propertiesElement) {
+                    propertiesElement.textContent = `地產: ${player.properties.length}`;
+                }
+            });
+            
+            // 更新骰子結果
+            diceResultElement.textContent = game.diceValue > 0 ? game.diceValue : '-';
+            
+            // 根據是否為AI玩家，更新按鈕狀態
+            if (currentPlayer.isAI && !currentPlayer.bankrupt) {
+                rollDiceButton.disabled = true;
+                buyPropertyButton.disabled = true;
+                endTurnButton.disabled = true;
+                
+                // AI玩家自動行動
+                setTimeout(() => {
+                    aiTurn(currentPlayer);
+                }, 1000);
+            } else if (!currentPlayer.bankrupt) {
+                rollDiceButton.disabled = false;
+                buyPropertyButton.disabled = !game.canBuyProperty;
+                endTurnButton.disabled = game.diceValue === 0;
+            }
+            
+            // 繪製遊戲板
+            drawBoard();
+        }
+        
+        // 繪製遊戲板
+        function drawBoard() {
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製背景
+            ctx.fillStyle = '#e8f4e8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製外框
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+            
+            // 計算每個格子的尺寸
+            const boardSize = 10; // 10x10的棋盤
+            const cellSize = canvas.width / boardSize;
+            
+            // 繪製格子
+            for (let i = 0; i < 40; i++) {
+                drawCell(i, cellSize);
+            }
+            
+            // 繪製玩家棋子
+            drawPlayers(cellSize);
+            
+            // 繪製遊戲標題
+            ctx.fillStyle = '#8b4513';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('大富翁', canvas.width/2, 30);
+            
+            // 繪製當前玩家資訊
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            if (currentPlayer && !currentPlayer.bankrupt) {
+                ctx.fillStyle = currentPlayer.color;
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText(`目前玩家: ${currentPlayer.name}`, canvas.width/2, canvas.height - 20);
+            }
+        }
+        
+        // 繪製格子
+        function drawCell(index, cellSize) {
+            let x, y, width, height;
+            
+            // 根據位置計算座標
+            if (index < 10) {
+                // 上邊
+                x = canvas.width - (index + 1) * cellSize;
+                y = 0;
+                width = cellSize;
+                height = cellSize;
+            } else if (index < 20) {
+                // 左邊
+                x = 0;
+                y = (index - 10) * cellSize;
+                width = cellSize;
+                height = cellSize;
+            } else if (index < 30) {
+                // 下邊
+                x = (index - 20) * cellSize;
+                y = canvas.height - cellSize;
+                width = cellSize;
+                height = cellSize;
+            } else {
+                // 右邊
+                x = canvas.width - cellSize;
+                y = canvas.height - (index - 29) * cellSize;
+                width = cellSize;
+                height = cellSize;
+            }
+            
+            // 繪製格子背景
+            ctx.fillStyle = getCellColor(index);
+            ctx.fillRect(x, y, width, height);
+            
+            // 繪製格子邊框
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, width, height);
+            
+            // 繪製格子內容
+            drawCellContent(index, x, y, width, height);
+        }
+        
+        // 獲取格子顏色
+        function getCellColor(index) {
+            // 特殊格子
+            if (index === 0) return '#ffd700'; // 起點 - 金色
+            if (index === 10) return '#cccccc'; // 監獄/休息區 - 灰色
+            if (index === 20) return '#ffd700'; // 停車場 - 金色
+            if (index === 30) return '#ff5252'; // 前往監獄 - 紅色
+            
+            // 機會卡格子
+            if (index === 7 || index === 22 || index === 36) return '#ffcc00'; // 機會 - 黃色
+            
+            // 公益金格子
+            if (index === 2 || index === 17 || index === 33) return '#00ccff'; // 公益金 - 藍色
+            
+            // 稅金格子
+            if (index === 4) return '#ff9900'; // 所得稅 - 橙色
+            if (index === 38) return '#ff9900'; // 奢侈稅 - 橙色
+            
+            // 地產格子
+            const property = game.properties.find(p => p.id === index);
+            if (property) {
+                return property.color;
+            }
+            
+            // 其他格子
+            return '#f0f0f0';
+        }
+        
+        // 繪製格子內容
+        function drawCellContent(index, x, y, width, height) {
+            ctx.fillStyle = '#000000';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            
+            // 根據格子類型繪製不同內容
+            if (index === 0) {
+                ctx.fillText('起點', x + width/2, y + height/2);
+                ctx.fillText('過路得$200', x + width/2, y + height/2 + 15);
+            } else if (index === 10) {
+                ctx.fillText('監獄', x + width/2, y + height/2);
+                ctx.fillText('休息區', x + width/2, y + height/2 + 15);
+            } else if (index === 20) {
+                ctx.fillText('免費', x + width/2, y + height/2);
+                ctx.fillText('停車', x + width/2, y + height/2 + 15);
+            } else if (index === 30) {
+                ctx.fillText('前往', x + width/2, y + height/2);
+                ctx.fillText('監獄', x + width/2, y + height/2 + 15);
+            } else if (index === 7 || index === 22 || index === 36) {
+                ctx.fillText('機會', x + width/2, y + height/2);
+            } else if (index === 2 || index === 17 || index === 33) {
+                ctx.fillText('公益金', x + width/2, y + height/2);
+            } else if (index === 4) {
+                ctx.fillText('所得稅', x + width/2, y + height/2);
+                ctx.fillText('$200', x + width/2, y + height/2 + 15);
+            } else if (index === 38) {
+                ctx.fillText('奢侈稅', x + width/2, y + height/2);
+                ctx.fillText('$100', x + width/2, y + height/2 + 15);
+            } else {
+                // 地產格子
+                const property = game.properties.find(p => p.id === index);
+                if (property) {
+                    // 地產名稱
+                    ctx.font = 'bold 9px Arial';
+                    ctx.fillText(property.name, x + width/2, y + height/3);
+                    
+                    // 地產價格
+                    ctx.font = '8px Arial';
+                    ctx.fillText(`$${property.getPrice()}`, x + width/2, y + height/2);
+                    
+                    // 如果有擁有者，顯示擁有者顏色標記
+                    if (property.owner !== null) {
+                        const owner = game.players.find(p => p.id === property.owner);
+                        if (owner) {
+                            ctx.fillStyle = owner.color;
+                            ctx.fillRect(x + 5, y + height - 15, 10, 10);
+                            
+                            // 如果有房子，顯示房子數量
+                            if (property.houses > 0) {
+                                ctx.fillStyle = '#000000';
+                                ctx.font = '8px Arial';
+                                ctx.fillText(`房x${property.houses}`, x + width - 20, y + height - 8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 繪製玩家棋子
+        function drawPlayers(cellSize) {
+            game.players.forEach((player, playerIndex) => {
+                if (player.bankrupt) return;
+                
+                const index = player.position;
+                let x, y;
+                
+                // 根據位置計算座標
+                if (index < 10) {
+                    // 上邊
+                    x = canvas.width - (index + 1) * cellSize;
+                    y = 0;
+                } else if (index < 20) {
+                    // 左邊
+                    x = 0;
+                    y = (index - 10) * cellSize;
+                } else if (index < 30) {
+                    // 下邊
+                    x = (index - 20) * cellSize;
+                    y = canvas.height - cellSize;
+                } else {
+                    // 右邊
+                    x = canvas.width - cellSize;
+                    y = canvas.height - (index - 29) * cellSize;
+                }
+                
+                // 根據玩家索引計算偏移量，使多個玩家不會完全重疊
+                const offsetX = (playerIndex % 2) * 15;
+                const offsetY = Math.floor(playerIndex / 2) * 15;
+                
+                // 繪製玩家棋子
+                ctx.fillStyle = player.color;
+                ctx.beginPath();
+                ctx.arc(x + offsetX + cellSize/4, y + offsetY + cellSize/4, 10, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 繪製棋子邊框
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 繪製玩家編號
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(player.id, x + offsetX + cellSize/4, y + offsetY + cellSize/4 + 3);
+            });
+        }
+        
+        // 擲骰子
+        function rollDice() {
+            if (game.gameOver) return;
+            
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            
+            // 如果玩家在監獄中
+            if (currentPlayer.inJail) {
+                handleJailTurn(currentPlayer);
+                return;
+            }
+            
+            // 擲兩個骰子
+            const dice1 = Math.floor(Math.random() * 6) + 1;
+            const dice2 = Math.floor(Math.random() * 6) + 1;
+            game.diceValue = dice1 + dice2;
+            
+            // 更新UI
+            diceResultElement.textContent = game.diceValue;
+            
+            // 移動玩家
+            movePlayer(currentPlayer, game.diceValue);
+            
+            // 添加日誌
+            addLogEntry(`${currentPlayer.name} 擲出 ${dice1} 和 ${dice2}，共 ${game.diceValue} 點`, 'dice');
+            
+            // 更新按鈕狀態
+            rollDiceButton.disabled = true;
+            endTurnButton.disabled = false;
+            
+            // 更新UI
+            updateUI();
+        }
+        
+        // 移動玩家
+        function movePlayer(player, steps) {
+            const oldPosition = player.position;
+            player.position = (player.position + steps) % 40;
+            
+            // 檢查是否經過起點
+            if (oldPosition + steps >= 40) {
+                player.money += difficultySettings[game.difficulty].passGoMoney;
+                addLogEntry(`${player.name} 經過起點，獲得 $${difficultySettings[game.difficulty].passGoMoney}`, 'system');
+            }
+            
+            // 檢查落地位置
+            checkLanding(player);
+        }
+        
+        // 檢查落地位置
+        function checkLanding(player) {
+            const position = player.position;
+            
+            // 檢查是否落在特殊格子
+            if (position === 30) {
+                // 前往監獄
+                goToJail(player);
+                return;
+            }
+            
+            if (position === 4) {
+                // 所得稅
+                payTax(player, 200);
+                return;
+            }
+            
+            if (position === 38) {
+                // 奢侈稅
+                payTax(player, 100);
+                return;
+            }
+            
+            if (position === 7 || position === 22 || position === 36) {
+                // 機會卡
+                drawChanceCard(player);
+                return;
+            }
+            
+            if (position === 2 || position === 17 || position === 33) {
+                // 公益金
+                drawCommunityChest(player);
+                return;
+            }
+            
+            // 檢查是否落在地產上
+            const property = game.properties.find(p => p.id === position);
+            if (property) {
+                handlePropertyLanding(player, property);
+                return;
+            }
+            
+            // 其他格子不需要特殊處理
+        }
+        
+        // 處理地產落地
+        function handlePropertyLanding(player, property) {
+            if (property.owner === null) {
+                // 無主地產，可以購買
+                game.canBuyProperty = true;
+                game.currentPropertyIndex = property.id;
+                
+                if (!player.isAI) {
+                    addLogEntry(`${player.name} 來到 ${property.name}，可以 $${property.getPrice()} 購買`, 'property');
+                    buyPropertyButton.disabled = false;
+                } else {
+                    // AI決定是否購買
+                    aiBuyDecision(player, property);
+                }
+            } else if (property.owner === player.id) {
+                // 自己的地產
+                addLogEntry(`${player.name} 來到自己的地產 ${property.name}`, 'property');
+                game.canBuyProperty = false;
+            } else {
+                // 他人的地產，需要支付租金
+                payRent(player, property);
+                game.canBuyProperty = false;
+            }
+        }
+        
+        // 購買地產
+        function buyProperty() {
+            if (!game.canBuyProperty || game.currentPropertyIndex === -1) return;
+            
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            const property = game.properties.find(p => p.id === game.currentPropertyIndex);
+            
+            if (!property || property.owner !== null) return;
+            
+            const price = property.getPrice();
+            
+            if (currentPlayer.money >= price) {
+                // 購買地產
+                currentPlayer.money -= price;
+                property.owner = currentPlayer.id;
+                currentPlayer.properties.push(property);
+                
+                // 添加日誌
+                addLogEntry(`${currentPlayer.name} 購買了 ${property.name}，花費 $${price}`, 'property');
+                
+                // 更新UI
+                game.canBuyProperty = false;
+                buyPropertyButton.disabled = true;
+                updateUI();
+            } else {
+                addLogEntry(`${currentPlayer.name} 沒有足夠的錢購買 ${property.name}`, 'property');
+            }
+        }
+        
+        // 支付租金
+        function payRent(player, property) {
+            const owner = game.players.find(p => p.id === property.owner);
+            if (!owner || owner.bankrupt) return;
+            
+            const rent = property.getRent();
+            
+            if (player.money >= rent) {
+                player.money -= rent;
+                owner.money += rent;
+                
+                addLogEntry(`${player.name} 支付租金 $${rent} 給 ${owner.name} (${property.name})`, 'rent');
+            } else {
+                // 玩家無法支付租金，破產
+                player.bankrupt = true;
+                player.money = 0;
+                
+                // 將玩家的地產轉移給房東
+                player.properties.forEach(p => {
+                    p.owner = owner.id;
+                    owner.properties.push(p);
+                });
+                player.properties = [];
+                
+                addLogEntry(`${player.name} 無法支付租金 $${rent}，破產了！`, 'bankrupt');
+                
+                // 檢查遊戲是否結束
+                checkGameOver();
+            }
+            
+            updateUI();
+        }
+        
+        // 支付稅金
+        function payTax(player, amount) {
+            if (player.money >= amount) {
+                player.money -= amount;
+                addLogEntry(`${player.name} 支付稅金 $${amount}`, 'tax');
+            } else {
+                player.bankrupt = true;
+                player.money = 0;
+                addLogEntry(`${player.name} 無法支付稅金 $${amount}，破產了！`, 'bankrupt');
+                checkGameOver();
+            }
+            updateUI();
+        }
+        
+        // 抽取機會卡
+        function drawChanceCard(player) {
+            const cardIndex = Math.floor(Math.random() * game.chanceCards.length);
+            const card = game.chanceCards[cardIndex];
+            
+            // 執行卡片動作
+            card.action(player);
+            
+            updateUI();
+        }
+        
+        // 抽取公益金卡
+        function drawCommunityChest(player) {
+            // 簡化版本：直接給錢或扣錢
+            const actions = [
+                { text: "從銀行獲得 $100", amount: 100 },
+                { text: "繳納罰款 $50", amount: -50 },
+                { text: "獲得遺產 $200", amount: 200 },
+                { text: "繳納醫療費用 $100", amount: -100 }
+            ];
+            
+            const actionIndex = Math.floor(Math.random() * actions.length);
+            const action = actions[actionIndex];
+            
+            player.money += action.amount;
+            
+            if (action.amount > 0) {
+                addLogEntry(`${player.name} 公益金: ${action.text}`, 'community');
+            } else {
+                addLogEntry(`${player.name} 公益金: ${action.text}`, 'community');
+            }
+            
+            updateUI();
+        }
+        
+        // 進入監獄
+        function goToJail(player) {
+            player.position = 10;
+            player.inJail = true;
+            player.jailTurns = 0;
+            
+            addLogEntry(`${player.name} 被送進監獄！`, 'jail');
+            updateUI();
+        }
+        
+        // 處理監獄回合
+        function handleJailTurn(player) {
+            player.jailTurns++;
+            
+            if (player.jailTurns >= 3) {
+                // 在監獄待了三回合，必須支付罰金
+                const bail = 50;
+                if (player.money >= bail) {
+                    player.money -= bail;
+                    player.inJail = false;
+                    player.jailTurns = 0;
+                    
+                    addLogEntry(`${player.name} 支付 $${bail} 保釋金離開監獄`, 'jail');
+                    
+                    // 現在可以擲骰子
+                    rollDiceButton.disabled = false;
+                    endTurnButton.disabled = true;
+                } else {
+                    // 無法支付保釋金，破產
+                    player.bankrupt = true;
+                    addLogEntry(`${player.name} 無法支付保釋金，破產了！`, 'bankrupt');
+                    checkGameOver();
+                }
+            } else {
+                // 嘗試擲出雙骰
+                const dice1 = Math.floor(Math.random() * 6) + 1;
+                const dice2 = Math.floor(Math.random() * 6) + 1;
+                
+                if (dice1 === dice2) {
+                    // 擲出雙骰，離開監獄
+                    player.inJail = false;
+                    player.jailTurns = 0;
+                    game.diceValue = dice1 + dice2;
+                    
+                    addLogEntry(`${player.name} 在監獄中擲出雙骰 (${dice1}, ${dice2})，離開監獄`, 'jail');
+                    
+                    // 移動玩家
+                    movePlayer(player, game.diceValue);
+                    
+                    // 更新按鈕狀態
+                    rollDiceButton.disabled = true;
+                    endTurnButton.disabled = false;
+                } else {
+                    // 未擲出雙骰，留在監獄
+                    addLogEntry(`${player.name} 在監獄中擲出 ${dice1} 和 ${dice2}，未擲出雙骰，留在監獄`, 'jail');
+                    
+                    // 結束回合
+                    endTurn();
+                }
+            }
+            
+            updateUI();
+        }
+        
+        // 結束回合
+        function endTurn() {
+            // 重置當前回合狀態
+            game.diceValue = 0;
+            game.canBuyProperty = false;
+            game.currentPropertyIndex = -1;
+            
+            // 切換到下一位玩家
+            let nextPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
+            
+            // 跳過已破產的玩家
+            while (game.players[nextPlayerIndex].bankrupt) {
+                nextPlayerIndex = (nextPlayerIndex + 1) % game.players.length;
+                
+                // 如果所有玩家都破產（除了當前玩家），遊戲結束
+                let activePlayers = game.players.filter(p => !p.bankrupt);
+                if (activePlayers.length <= 1) {
+                    checkGameOver();
+                    return;
+                }
+            }
+            
+            game.currentPlayerIndex = nextPlayerIndex;
+            
+            // 如果新回合開始，增加回合數
+            if (game.currentPlayerIndex === 0) {
+                game.turn++;
+            }
+            
+            // 更新UI
+            updateUI();
+            
+            // 添加日誌
+            const currentPlayer = game.players[game.currentPlayerIndex];
+            addLogEntry(`輪到 ${currentPlayer.name}`, 'turn');
+        }
+        
+        // AI回合
+        function aiTurn(player) {
+            // AI擲骰子
+            const dice1 = Math.floor(Math.random() * 6) + 1;
+            const dice2 = Math.floor(Math.random() * 6) + 1;
+            game.diceValue = dice1 + dice2;
+            
+            // 更新UI
+            diceResultElement.textContent = game.diceValue;
+            
+            // 添加日誌
+            addLogEntry(`${player.name} 擲出 ${dice1} 和 ${dice2}，共 ${game.diceValue} 點`, 'dice');
+            
+            // 移動玩家
+            movePlayer(player, game.diceValue);
+            
+            // 等待一下，然後結束回合
+            setTimeout(() => {
+                endTurn();
+            }, 1500);
+        }
+        
+        // AI購買決策
+        function aiBuyDecision(player, property) {
+            const price = property.getPrice();
+            const settings = difficultySettings[game.difficulty];
+            const aiAggressiveness = settings.aiAggressiveness;
+            
+            // AI根據攻擊性和資金決定是否購買
+            let shouldBuy = false;
+            
+            if (player.money > price * 2) {
+                // 資金充足，根據攻擊性決定
+                shouldBuy = Math.random() < aiAggressiveness;
+            } else if (player.money > price) {
+                // 資金剛好，較保守
+                shouldBuy = Math.random() < aiAggressiveness * 0.7;
+            } else {
+                // 資金不足
+                shouldBuy = false;
+            }
+            
+            if (shouldBuy) {
+                // 購買地產
+                player.money -= price;
+                property.owner = player.id;
+                player.properties.push(property);
+                
+                addLogEntry(`${player.name} 購買了 ${property.name}，花費 $${price}`, 'property');
+            } else {
+                addLogEntry(`${player.name} 決定不購買 ${property.name}`, 'property');
+            }
+            
+            updateUI();
+        }
+        
+        // 檢查遊戲是否結束
+        function checkGameOver() {
+            // 計算未破產的玩家數量
+            const activePlayers = game.players.filter(p => !p.bankrupt);
+            
+            // 如果只有一位玩家未破產，遊戲結束
+            if (activePlayers.length <= 1) {
+                game.gameOver = true;
+                endGame();
+            }
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            // 計算每位玩家的總資產
+            game.players.forEach(player => {
+                player.calculateAssets();
+            });
+            
+            // 找出贏家（總資產最高的未破產玩家）
+            const winner = game.players
+                .filter(p => !p.bankrupt)
+                .reduce((prev, current) => (prev.totalAssets > current.totalAssets) ? prev : current);
+            
+            // 計算最終分數
+            const finalScore = winner.totalAssets;
+            
+            // 檢查是否為新最高分
+            let newHighScore = false;
+            if (finalScore > game.highScore) {
+                game.highScore = finalScore;
+                localStorage.setItem('monopolyHighScore', game.highScore);
+                newHighScore = true;
+            }
+            
+            // 顯示遊戲結束畫面
+            document.getElementById('winner-name').textContent = `${winner.name} 獲勝！`;
+            document.getElementById('final-score').textContent = `$${finalScore}`;
+            document.getElementById('total-turns').textContent = game.turn;
+            
+            // 計算總地產數
+            const totalProperties = game.players.reduce((sum, player) => sum + player.properties.length, 0);
+            document.getElementById('total-properties').textContent = totalProperties;
+            
+            // 顯示新最高分訊息
+            if (newHighScore) {
+                document.getElementById('new-high-score').style.display = 'block';
+            } else {
+                document.getElementById('new-high-score').style.display = 'none';
+            }
+            
+            gameOverModal.style.display = 'flex';
+            
+            // 添加日誌
+            addLogEntry(`遊戲結束！${winner.name} 獲勝，總資產 $${finalScore}`, 'gameover');
+        }
+        
+        // 添加日誌條目
+        function addLogEntry(text, type = 'system') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            // 格式化時間
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            logEntry.textContent = `[${timeString}] ${text}`;
+            
+            eventLogElement.appendChild(logEntry);
+            
+            // 自動滾動到底部
+            eventLogElement.scrollTop = eventLogElement.scrollHeight;
+        }
+        
+        // 事件監聽器
+        rollDiceButton.addEventListener('click', rollDice);
+        buyPropertyButton.addEventListener('click', buyProperty);
+        endTurnButton.addEventListener('click', endTurn);
+        newGameButton.addEventListener('click', () => {
+            initGame();
+        });
+        playAgainButton.addEventListener('click', () => {
+            gameOverModal.style.display = 'none';
+            initGame();
+        });
+        
+        // 難度按鈕事件監聽
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setDifficulty(button.dataset.difficulty);
+            });
+        });
+        
+        // 初始化遊戲
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>

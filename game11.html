@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瑜伽冒險遊戲</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Quicksand:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #e0f7fa 0%, #bbdefb 100%);
+            color: #333;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 標題區域 */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 20px;
+            border-radius: 20px;
+            background: linear-gradient(45deg, #81c784, #4db6ac);
+            box-shadow: 0 10px 30px rgba(0, 150, 136, 0.2);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            animation: float 20s linear infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-30px, -30px) rotate(360deg); }
+        }
+        
+        .header h1 {
+            font-family: 'Quicksand', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            line-height: 1.6;
+        }
+        
+        /* 遊戲區域佈局 */
+        .game-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        /* 左側控制面板 */
+        .control-panel {
+            flex: 1;
+            min-width: 320px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+        
+        /* 右側遊戲畫布 */
+        .game-container {
+            flex: 2;
+            min-width: 500px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+        
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 600px;
+            background: #f5f5f5;
+        }
+        
+        /* 遊戲信息顯示 */
+        .game-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #81c784;
+            transition: all 0.3s ease;
+        }
+        
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-label {
+            font-size: 1rem;
+            color: #2e7d32;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #1b5e20;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 難度選擇 */
+        .difficulty-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            color: #2e7d32;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+        }
+        
+        .difficulty-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .difficulty-btn {
+            flex: 1;
+            padding: 18px 15px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 100px;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .difficulty-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .difficulty-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .difficulty-btn.easy {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        }
+        
+        .difficulty-btn.medium {
+            border-color: #FF9800;
+            background: linear-gradient(135deg, #fff3e0, #ffecb3);
+        }
+        
+        .difficulty-btn.hard {
+            border-color: #F44336;
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+        }
+        
+        /* 控制按鈕 */
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .control-btn {
+            flex: 1;
+            padding: 18px 10px;
+            border: none;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #2E7D32);
+        }
+        
+        .pause-btn {
+            background: linear-gradient(45deg, #2196F3, #0D47A1);
+        }
+        
+        .reset-btn {
+            background: linear-gradient(45deg, #f44336, #b71c1c);
+        }
+        
+        /* 瑜伽姿勢選擇 */
+        .pose-selection {
+            margin-top: 30px;
+        }
+        
+        .pose-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .pose-btn {
+            padding: 15px 10px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: 2px solid #81c784;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pose-btn:hover {
+            background: #e8f5e9;
+            transform: translateY(-3px);
+        }
+        
+        .pose-btn.active {
+            background: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+        
+        .pose-icon {
+            font-size: 1.8rem;
+        }
+        
+        /* 最高分區域 */
+        .high-scores {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+        
+        .high-scores h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2e7d32;
+            font-size: 2rem;
+            font-family: 'Quicksand', sans-serif;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .score-item {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 220px;
+            border: 2px solid #4CAF50;
+            transition: all 0.3s ease;
+        }
+        
+        .score-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-difficulty {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #2e7d32;
+            font-weight: 700;
+        }
+        
+        .score-value {
+            font-size: 2.8rem;
+            font-weight: bold;
+            color: #1b5e20;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 遊戲說明 */
+        .instructions {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+        
+        .instructions h3 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            font-family: 'Quicksand', sans-serif;
+        }
+        
+        .instructions-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+        
+        .instructions-list {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .instructions-list li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+        
+        .yoga-benefits {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            padding: 25px;
+            border-radius: 15px;
+            border: 2px solid #81c784;
+        }
+        
+        .yoga-benefits h4 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .yoga-benefits ul {
+            padding-left: 20px;
+        }
+        
+        .yoga-benefits li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        /* 遊戲內UI */
+        .game-ui {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        
+        .ui-element {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #4CAF50;
+            min-width: 180px;
+        }
+        
+        .ui-title {
+            font-size: 0.9rem;
+            color: #2e7d32;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .ui-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #1b5e20;
+        }
+        
+        .pose-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #4CAF50;
+            max-width: 350px;
+            pointer-events: none;
+        }
+        
+        .pose-indicator h3 {
+            color: #2e7d32;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pose-description {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .pose-timer {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .pose-timer-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #81c784);
+            width: 100%;
+            transition: width 1s linear;
+        }
+        
+        /* 遊戲結束畫面 */
+        .game-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .game-message {
+            background: white;
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            border: 5px solid #4CAF50;
+            box-shadow: 0 0 40px rgba(76, 175, 80, 0.5);
+            animation: popIn 0.6s ease-out;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .game-message h2 {
+            font-size: 3rem;
+            margin-bottom: 25px;
+            color: #2e7d32;
+            font-family: 'Quicksand', sans-serif;
+        }
+        
+        .game-message p {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .final-stats {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            border: 2px solid #81c784;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 1.2rem;
+        }
+        
+        .stat-label {
+            color: #2e7d32;
+            font-weight: 600;
+        }
+        
+        .stat-value {
+            color: #1b5e20;
+            font-weight: bold;
+        }
+        
+        .message-btn {
+            padding: 18px 35px;
+            background: linear-gradient(45deg, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .message-btn:hover {
+            background: linear-gradient(45deg, #2E7D32, #4CAF50);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .game-area {
+                flex-direction: column;
+            }
+            
+            .game-container {
+                min-width: 100%;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .instructions-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .pose-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-info {
+                grid-template-columns: 1fr;
+            }
+            
+            .score-board {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .ui-element {
+                min-width: 140px;
+                padding: 12px 20px;
+            }
+            
+            .ui-value {
+                font-size: 1.5rem;
+            }
+            
+            .pose-indicator {
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .control-buttons {
+                flex-direction: column;
+            }
+            
+            .difficulty-buttons {
+                flex-direction: column;
+            }
+            
+            .game-ui {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            
+            .ui-element {
+                width: 100%;
+                max-width: 300px;
+            }
+            
+            .pose-indicator {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                margin: 20px auto;
+                max-width: 90%;
+            }
+            
+            #gameCanvas {
+                height: 500px;
+            }
+        }
+        
+        /* 進度條動畫 */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* 進度條 */
+        .progress-container {
+            margin-top: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #4CAF50, #81c784);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+        
+        /* 角色動畫 */
+        .character {
+            position: absolute;
+            transition: all 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 標題區域 -->
+        <header class="header">
+            <h1><i class="fas fa-spa"></i> 瑜伽冒險遊戲</h1>
+            <p>通過完成正確的瑜伽姿勢，引導你的角色穿越充滿挑戰的關卡，達到身心平衡的境界！</p>
+        </header>
+        
+        <!-- 遊戲區域 -->
+        <div class="game-area">
+            <!-- 左側控制面板 -->
+            <div class="control-panel">
+                <!-- 遊戲信息 -->
+                <div class="game-info">
+                    <div class="info-box">
+                        <span class="info-label">分數</span>
+                        <span class="info-value" id="score">0</span>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-label">能量</span>
+                        <span class="info-value" id="energy">100</span>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-label">關卡</span>
+                        <span class="info-value" id="level">1</span>
+                    </div>
+                    <div class="info-box">
+                        <span class="info-label">完成姿勢</span>
+                        <span class="info-value" id="poses-completed">0</span>
+                    </div>
+                </div>
+                
+                <!-- 難度選擇 -->
+                <div class="difficulty-section">
+                    <div class="section-title">
+                        <i class="fas fa-sliders-h"></i> 遊戲難度
+                    </div>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn easy active" data-difficulty="easy">
+                            初學者
+                            <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px;">簡單姿勢，時間充裕</div>
+                        </button>
+                        <button class="difficulty-btn medium" data-difficulty="medium">
+                            進階者
+                            <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px;">中等挑戰，時間適中</div>
+                        </button>
+                        <button class="difficulty-btn hard" data-difficulty="hard">
+                            大師級
+                            <div style="font-size: 0.9rem; font-weight: normal; margin-top: 5px;">困難姿勢，時間緊迫</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 瑜伽姿勢選擇 -->
+                <div class="pose-selection">
+                    <div class="section-title">
+                        <i class="fas fa-user-check"></i> 選擇瑜伽姿勢
+                    </div>
+                    <div class="pose-buttons" id="pose-buttons">
+                        <!-- 姿勢按鈕將由JavaScript動態生成 -->
+                    </div>
+                </div>
+                
+                <!-- 控制按鈕 -->
+                <div class="control-buttons">
+                    <button class="control-btn start-btn" id="start-btn">
+                        <i class="fas fa-play"></i> 開始遊戲
+                    </button>
+                    <button class="control-btn pause-btn" id="pause-btn">
+                        <i class="fas fa-pause"></i> 暫停
+                    </button>
+                    <button class="control-btn reset-btn" id="reset-btn">
+                        <i class="fas fa-redo"></i> 重新開始
+                    </button>
+                </div>
+                
+                <!-- 關卡進度 -->
+                <div class="progress-container" style="margin-top: 30px;">
+                    <div class="progress-bar" id="level-progress"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; color: #2e7d32; font-weight: 600;">
+                    關卡進度: <span id="progress-text">0%</span>
+                </div>
+            </div>
+            
+            <!-- 右側遊戲畫布 -->
+            <div class="game-container">
+                <canvas id="gameCanvas"></canvas>
+                
+                <!-- 遊戲內UI -->
+                <div class="game-ui">
+                    <div class="ui-element">
+                        <div class="ui-title">當前姿勢</div>
+                        <div class="ui-value" id="current-pose">準備中</div>
+                    </div>
+                    <div class="ui-element">
+                        <div class="ui-title">姿勢持續時間</div>
+                        <div class="ui-value" id="pose-timer">--</div>
+                    </div>
+                    <div class="ui-element">
+                        <div class="ui-title">連擊數</div>
+                        <div class="ui-value" id="combo">0</div>
+                    </div>
+                </div>
+                
+                <!-- 姿勢指示器 -->
+                <div class="pose-indicator" id="pose-indicator">
+                    <h3><i class="fas fa-info-circle"></i> 姿勢說明</h3>
+                    <div class="pose-description" id="pose-description">
+                        準備開始遊戲！選擇一個瑜伽姿勢，然後點擊「開始遊戲」按鈕。
+                    </div>
+                    <div class="pose-timer">
+                        <div class="pose-timer-fill" id="pose-timer-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 最高分區域 -->
+        <div class="high-scores">
+            <h2><i class="fas fa-trophy"></i> 最高分記錄</h2>
+            <div class="score-board">
+                <div class="score-item">
+                    <div class="score-difficulty">初學者模式</div>
+                    <div class="score-value" id="high-score-easy">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-difficulty">進階者模式</div>
+                    <div class="score-value" id="high-score-medium">0</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-difficulty">大師級模式</div>
+                    <div class="score-value" id="high-score-hard">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 遊戲說明 -->
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> 遊戲說明</h3>
+            <div class="instructions-content">
+                <div>
+                    <h4>遊戲玩法</h4>
+                    <ul class="instructions-list">
+                        <li><strong>選擇難度</strong>：根據你的瑜伽經驗選擇適合的難度</li>
+                        <li><strong>選擇瑜伽姿勢</strong>：從左側面板選擇一個瑜伽姿勢</li>
+                        <li><strong>開始遊戲</strong>：點擊「開始遊戲」按鈕，角色將開始移動</li>
+                        <li><strong>完成姿勢</strong>：在時間限制內保持正確的瑜伽姿勢</li>
+                        <li><strong>通過障礙</strong>：正確的姿勢可以幫助角色通過關卡中的各種障礙</li>
+                        <li><strong>收集能量</strong>：收集綠色能量球來恢復能量值</li>
+                        <li><strong>避免錯誤</strong>：錯誤的姿勢會導致能量減少和連擊中斷</li>
+                    </ul>
+                    
+                    <h4>控制方式</h4>
+                    <ul class="instructions-list">
+                        <li><strong>選擇姿勢</strong>：點擊左側面板中的姿勢按鈕</li>
+                        <li><strong>開始/暫停遊戲</strong>：使用控制按鈕或鍵盤快捷鍵</li>
+                        <li><strong>鍵盤控制</strong>：使用數字鍵 1-6 快速選擇瑜伽姿勢</li>
+                        <li><strong>空格鍵</strong>：快速開始/暫停遊戲</li>
+                    </ul>
+                </div>
+                
+                <div class="yoga-benefits">
+                    <h4><i class="fas fa-heart"></i> 瑜伽的好處</h4>
+                    <ul>
+                        <li>增強身體柔韌性和平衡感</li>
+                        <li>改善呼吸和循環系統</li>
+                        <li>減輕壓力和焦慮</li>
+                        <li>提升專注力和記憶力</li>
+                        <li>增強肌肉力量和耐力</li>
+                        <li>改善姿勢和身體對齊</li>
+                        <li>促進身心和諧與平衡</li>
+                    </ul>
+                    <p style="margin-top: 20px; font-style: italic; color: #2e7d32;">
+                        "瑜伽不僅是身體的練習，更是心靈的旅程。"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 遊戲結束畫面 -->
+    <div class="game-overlay" id="game-over">
+        <div class="game-message">
+            <h2><i class="fas fa-heartbeat"></i> 遊戲結束</h2>
+            <p>你的能量已經耗盡，需要休息一下！</p>
+            <div class="final-stats">
+                <div class="stat-row">
+                    <span class="stat-label">最終分數:</span>
+                    <span class="stat-value" id="final-score">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">最高關卡:</span>
+                    <span class="stat-value" id="final-level">1</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">完成姿勢:</span>
+                    <span class="stat-value" id="final-poses">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">最高連擊:</span>
+                    <span class="stat-value" id="final-combo">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">遊戲難度:</span>
+                    <span class="stat-value" id="final-difficulty">初學者</span>
+                </div>
+            </div>
+            <button class="message-btn" id="retry-btn">再試一次</button>
+        </div>
+    </div>
+    
+    <!-- 關卡完成畫面 -->
+    <div class="game-overlay" id="level-complete">
+        <div class="game-message">
+            <h2><i class="fas fa-star"></i> 關卡完成！</h2>
+            <p>恭喜你成功完成了這個關卡！</p>
+            <div class="final-stats">
+                <div class="stat-row">
+                    <span class="stat-label">關卡分數:</span>
+                    <span class="stat-value" id="level-score">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">姿勢準確度:</span>
+                    <span class="stat-value" id="accuracy">100%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">時間獎勵:</span>
+                    <span class="stat-value" id="time-bonus">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">連擊獎勵:</span>
+                    <span class="stat-value" id="combo-bonus">0</span>
+                </div>
+                <div class="stat-row" style="border-bottom: none; padding-bottom: 0;">
+                    <span class="stat-label">總分:</span>
+                    <span class="stat-value" style="color: #2e7d32; font-size: 1.4rem;" id="total-level-score">0</span>
+                </div>
+            </div>
+            <button class="message-btn" id="next-level-btn">下一關</button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲變數
+        let canvas, ctx;
+        let gameRunning = false;
+        let gamePaused = false;
+        let currentDifficulty = 'easy';
+        let score = 0;
+        let energy = 100;
+        let maxEnergy = 100;
+        let level = 1;
+        let posesCompleted = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let currentPose = null;
+        let poseTimer = 0;
+        let poseTimeLimit = 10;
+        let levelProgress = 0;
+        let animationId;
+        
+        // 難度設定
+        const difficulties = {
+            easy: {
+                poseTimeLimit: 15,
+                energyDrain: 0.5,
+                energyGain: 15,
+                scoreMultiplier: 1,
+                levelLength: 5,
+                obstacleFrequency: 0.3
+            },
+            medium: {
+                poseTimeLimit: 12,
+                energyDrain: 0.8,
+                energyGain: 12,
+                scoreMultiplier: 1.5,
+                levelLength: 7,
+                obstacleFrequency: 0.5
+            },
+            hard: {
+                poseTimeLimit: 8,
+                energyDrain: 1.2,
+                energyGain: 10,
+                scoreMultiplier: 2,
+                levelLength: 10,
+                obstacleFrequency: 0.7
+            }
+        };
+        
+        // 瑜伽姿勢資料
+        const yogaPoses = [
+            {
+                id: 1,
+                name: "樹式",
+                icon: "fas fa-tree",
+                description: "單腳站立，另一腳腳掌貼在站立腿的大腿內側，雙手合十舉過頭頂。這個姿勢有助於提高平衡感和專注力。",
+                key: "1",
+                color: "#4CAF50",
+                points: 100
+            },
+            {
+                id: 2,
+                name: "戰士二式",
+                icon: "fas fa-user-ninja",
+                description: "雙腳大步分開，前腳膝蓋彎曲，後腳伸直，雙臂向兩側伸展，目視前方。這個姿勢可以增強腿部力量和穩定性。",
+                key: "2",
+                color: "#2196F3",
+                points: 120
+            },
+            {
+                id: 3,
+                name: "下犬式",
+                icon: "fas fa-dog",
+                description: "手掌和腳掌貼地，臀部向上抬起，身體呈倒V字形。這個姿勢可以伸展全身，緩解背部緊張。",
+                key: "3",
+                color: "#FF9800",
+                points: 150
+            },
+            {
+                id: 4,
+                name: "貓牛式",
+                icon: "fas fa-cat",
+                description: "四足跪姿，吸氣時腹部下沉，抬頭挺胸（牛式）；呼氣時背部拱起，下巴內收（貓式）。這個姿勢可以增加脊柱靈活性。",
+                key: "4",
+                color: "#9C27B0",
+                points: 130
+            },
+            {
+                id: 5,
+                name: "船式",
+                icon: "fas fa-ship",
+                description: "坐姿，雙腿伸直抬起，身體向後傾斜，雙手向前伸直，保持平衡。這個姿勢可以強化核心肌群。",
+                key: "5",
+                color: "#F44336",
+                points: 170
+            },
+            {
+                id: 6,
+                name: "嬰兒式",
+                icon: "fas fa-baby",
+                description: "跪坐，身體前傾，額頭觸地，雙臂向前伸展或放在身體兩側。這個姿勢可以放鬆身心，緩解壓力。",
+                key: "6",
+                color: "#00BCD4",
+                points: 80
+            }
+        ];
+        
+        // 遊戲物件
+        let character = {
+            x: 100,
+            y: 300,
+            width: 60,
+            height: 100,
+            speed: 3,
+            vy: 0,
+            onGround: false,
+            color: "#4CAF50"
+        };
+        
+        // 遊戲關卡元素
+        let platforms = [];
+        let obstacles = [];
+        let energyOrbs = [];
+        let checkpoints = [];
+        let levelCompleteX = 0;
+        
+        // 從 localStorage 加載最高分
+        let highScores = {
+            easy: localStorage.getItem('yogaHighScoreEasy') || 0,
+            medium: localStorage.getItem('yogaHighScoreMedium') || 0,
+            hard: localStorage.getItem('yogaHighScoreHard') || 0
+        };
+        
+        // DOM 元素
+        const scoreElement = document.getElementById('score');
+        const energyElement = document.getElementById('energy');
+        const levelElement = document.getElementById('level');
+        const posesCompletedElement = document.getElementById('poses-completed');
+        const currentPoseElement = document.getElementById('current-pose');
+        const poseTimerElement = document.getElementById('pose-timer');
+        const comboElement = document.getElementById('combo');
+        const poseDescriptionElement = document.getElementById('pose-description');
+        const poseTimerFillElement = document.getElementById('pose-timer-fill');
+        const levelProgressElement = document.getElementById('level-progress');
+        const progressTextElement = document.getElementById('progress-text');
+        
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const difficultyBtns = document.querySelectorAll('.difficulty-btn');
+        const poseButtonsContainer = document.getElementById('pose-buttons');
+        
+        const gameOverScreen = document.getElementById('game-over');
+        const levelCompleteScreen = document.getElementById('level-complete');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
+        const finalPosesElement = document.getElementById('final-poses');
+        const finalComboElement = document.getElementById('final-combo');
+        const finalDifficultyElement = document.getElementById('final-difficulty');
+        const retryBtn = document.getElementById('retry-btn');
+        
+        const levelScoreElement = document.getElementById('level-score');
+        const accuracyElement = document.getElementById('accuracy');
+        const timeBonusElement = document.getElementById('time-bonus');
+        const comboBonusElement = document.getElementById('combo-bonus');
+        const totalLevelScoreElement = document.getElementById('total-level-score');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+        
+        const highScoreEasyElement = document.getElementById('high-score-easy');
+        const highScoreMediumElement = document.getElementById('high-score-medium');
+        const highScoreHardElement = document.getElementById('high-score-hard');
+        
+        // 初始化遊戲
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // 設置畫布大小
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // 創建瑜伽姿勢按鈕
+            createPoseButtons();
+            
+            // 重置遊戲狀態
+            resetGame();
+            
+            // 更新顯示
+            updateDisplay();
+            updateHighScoresDisplay();
+            
+            // 初始繪製
+            draw();
+        }
+        
+        // 創建瑜伽姿勢按鈕
+        function createPoseButtons() {
+            poseButtonsContainer.innerHTML = '';
+            
+            yogaPoses.forEach((pose, index) => {
+                const button = document.createElement('button');
+                button.className = 'pose-btn';
+                button.dataset.poseId = pose.id;
+                button.innerHTML = `
+                    <div class="pose-icon"><i class="${pose.icon}"></i></div>
+                    <div>${pose.name}</div>
+                    <div style="font-size: 0.8rem; font-weight: normal;">按鍵: ${pose.key}</div>
+                `;
+                
+                button.addEventListener('click', () => selectPose(pose.id));
+                
+                // 設置第一個姿勢為默認選擇
+                if (index === 0) {
+                    button.classList.add('active');
+                    selectPose(pose.id);
+                }
+                
+                poseButtonsContainer.appendChild(button);
+            });
+        }
+        
+        // 選擇瑜伽姿勢
+        function selectPose(poseId) {
+            // 更新按鈕狀態
+            document.querySelectorAll('.pose-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.querySelector(`.pose-btn[data-pose-id="${poseId}"]`).classList.add('active');
+            
+            // 設置當前姿勢
+            const pose = yogaPoses.find(p => p.id === poseId);
+            currentPose = pose;
+            
+            // 更新顯示
+            currentPoseElement.textContent = pose.name;
+            currentPoseElement.style.color = pose.color;
+            poseDescriptionElement.textContent = pose.description;
+            
+            // 重置姿勢計時器
+            poseTimer = 0;
+            updatePoseTimerDisplay();
+            
+            // 如果遊戲正在進行中，應用姿勢效果
+            if (gameRunning && !gamePaused) {
+                applyPoseEffect();
+            }
+        }
+        
+        // 應用姿勢效果
+        function applyPoseEffect() {
+            if (!currentPose) return;
+            
+            // 重置姿勢計時器
+            poseTimer = 0;
+            const difficulty = difficulties[currentDifficulty];
+            poseTimeLimit = difficulty.poseTimeLimit;
+            
+            // 根據姿勢調整角色屬性
+            switch(currentPose.id) {
+                case 1: // 樹式 - 增加平衡性
+                    character.vy = 0;
+                    break;
+                case 2: // 戰士二式 - 增加速度
+                    character.speed = 5;
+                    setTimeout(() => {
+                        if (gameRunning) character.speed = 3;
+                    }, 2000);
+                    break;
+                case 3: // 下犬式 - 跳躍更高
+                    character.vy = -15;
+                    break;
+                case 5: // 船式 - 增強核心，減少能量消耗
+                    // 效果在遊戲循環中應用
+                    break;
+            }
+            
+            // 更新姿勢指示器
+            poseTimerFillElement.style.width = '100%';
+            poseTimerFillElement.style.backgroundColor = currentPose.color;
+        }
+        
+        // 重置遊戲
+        function resetGame() {
+            gameRunning = false;
+            gamePaused = false;
+            score = 0;
+            energy = maxEnergy;
+            level = 1;
+            posesCompleted = 0;
+            combo = 0;
+            maxCombo = 0;
+            levelProgress = 0;
+            
+            // 重置角色位置
+            character.x = 100;
+            character.y = canvas.height - 200;
+            character.vy = 0;
+            
+            // 重置姿勢
+            if (yogaPoses.length > 0) {
+                selectPose(yogaPoses[0].id);
+            }
+            
+            // 生成關卡
+            generateLevel();
+            
+            // 更新遊戲狀態顯示
+            updateDisplay();
+            
+            // 停止動畫循環
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // 更新按鈕文字
+            startBtn.innerHTML = '<i class="fas fa-play"></i> 開始遊戲';
+            pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停';
+        }
+        
+        // 生成關卡
+        function generateLevel() {
+            // 清空關卡元素
+            platforms = [];
+            obstacles = [];
+            energyOrbs = [];
+            checkpoints = [];
+            
+            const difficulty = difficulties[currentDifficulty];
+            const levelWidth = canvas.width * difficulty.levelLength;
+            levelCompleteX = levelWidth - 200;
+            
+            // 創建基礎平台
+            for (let i = 0; i < levelWidth; i += 200) {
+                const platformHeight = canvas.height - 100;
+                const platformWidth = 200;
+                const platformVariance = Math.random() * 100 - 50;
+                
+                platforms.push({
+                    x: i,
+                    y: platformHeight + platformVariance,
+                    width: platformWidth,
+                    height: 20,
+                    color: '#81c784'
+                });
+            }
+            
+            // 創建障礙物
+            const obstacleCount = Math.floor(levelWidth / 300 * difficulty.obstacleFrequency);
+            for (let i = 0; i < obstacleCount; i++) {
+                const x = 500 + Math.random() * (levelWidth - 1000);
+                const y = canvas.height - 150 - Math.random() * 100;
+                const width = 40 + Math.random() * 60;
+                const height = 40 + Math.random() * 60;
+                
+                obstacles.push({
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    color: '#f44336',
+                    type: Math.floor(Math.random() * 3) // 0: 普通, 1: 移動, 2: 跳躍
+                });
+            }
+            
+            // 創建能量球
+            const orbCount = Math.floor(levelWidth / 200);
+            for (let i = 0; i < orbCount; i++) {
+                const x = 300 + Math.random() * (levelWidth - 600);
+                const y = canvas.height - 200 - Math.random() * 300;
+                
+                energyOrbs.push({
+                    x: x,
+                    y: y,
+                    radius: 15,
+                    color: '#4CAF50'
+                });
+            }
+            
+            // 創建檢查點
+            for (let i = 1; i < difficulty.levelLength; i++) {
+                const x = (levelWidth / difficulty.levelLength) * i;
+                
+                checkpoints.push({
+                    x: x,
+                    y: canvas.height - 150,
+                    width: 10,
+                    height: 80,
+                    color: '#2196F3',
+                    collected: false
+                });
+            }
+            
+            // 更新進度條
+            updateProgressBar();
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            if (gameRunning && !gamePaused) return;
+            
+            if (!gameRunning) {
+                // 新遊戲開始
+                gameRunning = true;
+                gamePaused = false;
+                
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 遊戲進行中';
+                
+                // 開始遊戲循環
+                gameLoop();
+            } else if (gamePaused) {
+                // 恢復遊戲
+                gamePaused = false;
+                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停';
+                gameLoop();
+            }
+        }
+        
+        // 暫停遊戲
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                pauseBtn.innerHTML = '<i class="fas fa-play"></i> 繼續';
+            } else {
+                pauseBtn.innerHTML = '<i class="fas fa-pause"></i> 暫停';
+                gameLoop();
+            }
+        }
+        
+        // 遊戲主循環
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+            
+            // 更新遊戲狀態
+            update();
+            
+            // 渲染遊戲
+            draw();
+            
+            // 繼續循環
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        // 更新遊戲邏輯
+        function update() {
+            if (!gameRunning) return;
+            
+            const difficulty = difficulties[currentDifficulty];
+            
+            // 更新姿勢計時器
+            if (currentPose) {
+                poseTimer += 1/60; // 假設60fps
+                
+                // 更新姿勢計時器顯示
+                updatePoseTimerDisplay();
+                
+                // 檢查姿勢是否超時
+                if (poseTimer >= poseTimeLimit) {
+                    // 姿勢超時，減少能量
+                    energy -= 10;
+                    updateEnergyDisplay();
+                    
+                    // 重置連擊
+                    combo = 0;
+                    updateComboDisplay();
+                    
+                    // 重置姿勢計時器
+                    poseTimer = 0;
+                    
+                    // 檢查遊戲結束
+                    if (energy <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+            
+            // 移動角色
+            moveCharacter();
+            
+            // 更新能量（逐漸減少）
+            energy -= difficulty.energyDrain * 0.1;
+            updateEnergyDisplay();
+            
+            // 檢查遊戲結束
+            if (energy <= 0) {
+                endGame();
+                return;
+            }
+            
+            // 檢查與平台的碰撞
+            checkPlatformCollisions();
+            
+            // 檢查與障礙物的碰撞
+            checkObstacleCollisions();
+            
+            // 檢查與能量球的碰撞
+            checkEnergyOrbCollisions();
+            
+            // 檢查與檢查點的碰撞
+            checkCheckpointCollisions();
+            
+            // 檢查是否完成關卡
+            if (character.x >= levelCompleteX) {
+                completeLevel();
+                return;
+            }
+            
+            // 更新關卡進度
+            levelProgress = character.x / levelCompleteX;
+            updateProgressBar();
+            
+            // 更新障礙物位置（移動型障礙物）
+            updateObstacles();
+        }
+        
+        // 移動角色
+        function moveCharacter() {
+            // 水平移動
+            character.x += character.speed;
+            
+            // 垂直移動（重力）
+            character.vy += 0.5;
+            character.y += character.vy;
+            
+            // 確保角色不會掉出畫面底部
+            if (character.y > canvas.height - character.height) {
+                character.y = canvas.height - character.height;
+                character.vy = 0;
+                character.onGround = true;
+            } else {
+                character.onGround = false;
+            }
+            
+            // 確保角色不會移出畫面左側
+            if (character.x < 0) {
+                character.x = 0;
+            }
+        }
+        
+        // 檢查與平台的碰撞
+        function checkPlatformCollisions() {
+            character.onGround = false;
+            
+            for (let platform of platforms) {
+                if (character.x < platform.x + platform.width &&
+                    character.x + character.width > platform.x &&
+                    character.y + character.height > platform.y &&
+                    character.y + character.height < platform.y + 30) {
+                    
+                    // 站在平台上
+                    character.y = platform.y - character.height;
+                    character.vy = 0;
+                    character.onGround = true;
+                    break;
+                }
+            }
+        }
+        
+        // 檢查與障礙物的碰撞
+        function checkObstacleCollisions() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                
+                if (character.x < obstacle.x + obstacle.width &&
+                    character.x + character.width > obstacle.x &&
+                    character.y < obstacle.y + obstacle.height &&
+                    character.y + character.height > obstacle.y) {
+                    
+                    // 根據障礙物類型處理碰撞
+                    if (obstacle.type === 0) { // 普通障礙物
+                        // 減少能量
+                        energy -= 20;
+                        updateEnergyDisplay();
+                        
+                        // 擊退角色
+                        character.x -= 50;
+                        character.vy = -10;
+                        
+                        // 重置連擊
+                        combo = 0;
+                        updateComboDisplay();
+                        
+                    } else if (obstacle.type === 1) { // 移動障礙物
+                        // 可以使用某些姿勢通過
+                        if (currentPose && (currentPose.id === 2 || currentPose.id === 3)) {
+                            // 成功通過，增加分數
+                            score += 50;
+                            updateScoreDisplay();
+                            combo++;
+                            updateComboDisplay();
+                            obstacles.splice(i, 1);
+                        } else {
+                            // 未能通過，減少能量
+                            energy -= 15;
+                            updateEnergyDisplay();
+                            character.x -= 30;
+                            combo = 0;
+                            updateComboDisplay();
+                        }
+                    } else if (obstacle.type === 2) { // 跳躍障礙物
+                        // 需要跳躍通過
+                        if (character.vy < 0 || currentPose?.id === 3) {
+                            // 成功通過，增加分數
+                            score += 30;
+                            updateScoreDisplay();
+                            combo++;
+                            updateComboDisplay();
+                        } else {
+                            // 未能通過，減少能量
+                            energy -= 10;
+                            updateEnergyDisplay();
+                            character.x -= 20;
+                            combo = 0;
+                            updateComboDisplay();
+                        }
+                    }
+                    
+                    // 檢查遊戲結束
+                    if (energy <= 0) {
+                        endGame();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // 檢查與能量球的碰撞
+        function checkEnergyOrbCollisions() {
+            for (let i = energyOrbs.length - 1; i >= 0; i--) {
+                const orb = energyOrbs[i];
+                
+                // 計算角色中心點
+                const charCenterX = character.x + character.width / 2;
+                const charCenterY = character.y + character.height / 2;
+                
+                // 計算距離
+                const dx = charCenterX - orb.x;
+                const dy = charCenterY - orb.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < orb.radius + Math.min(character.width, character.height) / 2) {
+                    // 收集能量球
+                    energy = Math.min(maxEnergy, energy + difficulties[currentDifficulty].energyGain);
+                    updateEnergyDisplay();
+                    
+                    // 增加分數
+                    score += 50;
+                    updateScoreDisplay();
+                    
+                    // 增加連擊
+                    combo++;
+                    updateComboDisplay();
+                    
+                    // 移除能量球
+                    energyOrbs.splice(i, 1);
+                }
+            }
+        }
+        
+        // 檢查與檢查點的碰撞
+        function checkCheckpointCollisions() {
+            for (let checkpoint of checkpoints) {
+                if (!checkpoint.collected &&
+                    character.x < checkpoint.x + checkpoint.width &&
+                    character.x + character.width > checkpoint.x &&
+                    character.y < checkpoint.y + checkpoint.height &&
+                    character.y + character.height > checkpoint.y) {
+                    
+                    // 收集檢查點
+                    checkpoint.collected = true;
+                    
+                    // 增加分數
+                    score += 200;
+                    updateScoreDisplay();
+                    
+                    // 增加連擊
+                    combo += 2;
+                    updateComboDisplay();
+                    
+                    // 恢復能量
+                    energy = Math.min(maxEnergy, energy + 30);
+                    updateEnergyDisplay();
+                }
+            }
+        }
+        
+        // 更新障礙物位置
+        function updateObstacles() {
+            obstacles.forEach(obstacle => {
+                if (obstacle.type === 1) { // 移動障礙物
+                    // 簡單的上下移動
+                    obstacle.y += Math.sin(Date.now() / 1000) * 2;
+                }
+            });
+        }
+        
+        // 繪製遊戲
+        function draw() {
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製背景
+            drawBackground();
+            
+            // 繪製平台
+            drawPlatforms();
+            
+            // 繪製檢查點
+            drawCheckpoints();
+            
+            // 繪製障礙物
+            drawObstacles();
+            
+            // 繪製能量球
+            drawEnergyOrbs();
+            
+            // 繪製角色
+            drawCharacter();
+            
+            // 繪製關卡完成線
+            drawFinishLine();
+        }
+        
+        // 繪製背景
+        function drawBackground() {
+            // 天空漸層
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#e0f7fa');
+            gradient.addColorStop(1, '#bbdefb');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 雲朵
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 5; i++) {
+                const x = (character.x * 0.1 + i * 200) % (canvas.width + 400) - 200;
+                const y = 50 + i * 40;
+                const width = 100 + i * 20;
+                const height = 40;
+                
+                ctx.beginPath();
+                ctx.ellipse(x, y, width/2, height/2, 0, 0, Math.PI * 2);
+                ctx.ellipse(x - width/3, y, width/3, height/2, 0, 0, Math.PI * 2);
+                ctx.ellipse(x + width/3, y, width/3, height/2, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 遠山
+            ctx.fillStyle = '#a5d6a7';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 100);
+            for (let i = 0; i < canvas.width; i += 100) {
+                const height = 80 + Math.sin(i * 0.02) * 30;
+                ctx.lineTo(i, canvas.height - height);
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // 繪製平台
+        function drawPlatforms() {
+            platforms.forEach(platform => {
+                // 只繪製在視野內的平台
+                if (platform.x + platform.width < character.x - canvas.width/2 || 
+                    platform.x > character.x + canvas.width * 1.5) {
+                    return;
+                }
+                
+                // 平台主體
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x - character.x + canvas.width/2 - character.width/2, 
+                           platform.y, 
+                           platform.width, 
+                           platform.height);
+                
+                // 平台細節
+                ctx.fillStyle = '#66bb6a';
+                for (let i = 0; i < platform.width; i += 20) {
+                    ctx.fillRect(
+                        platform.x - character.x + canvas.width/2 - character.width/2 + i, 
+                        platform.y, 
+                        10, 
+                        5
+                    );
+                }
+            });
+        }
+        
+        // 繪製障礙物
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                // 只繪製在視野內的障礙物
+                if (obstacle.x + obstacle.width < character.x - canvas.width/2 || 
+                    obstacle.x > character.x + canvas.width * 1.5) {
+                    return;
+                }
+                
+                const x = obstacle.x - character.x + canvas.width/2 - character.width/2;
+                const y = obstacle.y;
+                
+                // 障礙物主體
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(x, y, obstacle.width, obstacle.height);
+                
+                // 障礙物細節
+                ctx.fillStyle = '#ff7961';
+                if (obstacle.type === 0) {
+                    // 普通障礙物 - 尖刺
+                    for (let i = 5; i < obstacle.width; i += 15) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + i, y + obstacle.height);
+                        ctx.lineTo(x + i + 7, y);
+                        ctx.lineTo(x + i - 7, y);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                } else if (obstacle.type === 1) {
+                    // 移動障礙物 - 圓形
+                    ctx.beginPath();
+                    ctx.arc(x + obstacle.width/2, y + obstacle.height/2, obstacle.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = '#ff5252';
+                    ctx.beginPath();
+                    ctx.arc(x + obstacle.width/2, y + obstacle.height/2, obstacle.width/3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (obstacle.type === 2) {
+                    // 跳躍障礙物 - 長條形
+                    ctx.fillRect(x, y + obstacle.height/2 - 5, obstacle.width, 10);
+                }
+            });
+        }
+        
+        // 繪製能量球
+        function drawEnergyOrbs() {
+            energyOrbs.forEach(orb => {
+                // 只繪製在視野內的能量球
+                if (orb.x + orb.radius < character.x - canvas.width/2 || 
+                    orb.x - orb.radius > character.x + canvas.width * 1.5) {
+                    return;
+                }
+                
+                const x = orb.x - character.x + canvas.width/2 - character.width/2;
+                const y = orb.y;
+                
+                // 能量球外圈
+                ctx.fillStyle = orb.color;
+                ctx.beginPath();
+                ctx.arc(x, y, orb.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 能量球內圈
+                ctx.fillStyle = '#a5d6a7';
+                ctx.beginPath();
+                ctx.arc(x, y, orb.radius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 能量球光暈
+                ctx.fillStyle = 'rgba(165, 214, 167, 0.5)';
+                ctx.beginPath();
+                ctx.arc(x, y, orb.radius * 1.2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 加號圖標
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('+', x, y);
+            });
+        }
+        
+        // 繪製檢查點
+        function drawCheckpoints() {
+            checkpoints.forEach(checkpoint => {
+                // 只繪製在視野內的檢查點
+                if (checkpoint.x + checkpoint.width < character.x - canvas.width/2 || 
+                    checkpoint.x > character.x + canvas.width * 1.5) {
+                    return;
+                }
+                
+                const x = checkpoint.x - character.x + canvas.width/2 - character.width/2;
+                const y = checkpoint.y;
+                
+                // 檢查點柱子
+                ctx.fillStyle = checkpoint.collected ? '#90caf9' : checkpoint.color;
+                ctx.fillRect(x, y, checkpoint.width, checkpoint.height);
+                
+                // 檢查點旗幟
+                if (!checkpoint.collected) {
+                    ctx.fillStyle = '#2196F3';
+                    ctx.beginPath();
+                    ctx.moveTo(x + checkpoint.width, y);
+                    ctx.lineTo(x + checkpoint.width + 30, y + 15);
+                    ctx.lineTo(x + checkpoint.width, y + 30);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // 已收集的檢查點顯示對勾
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('✓', x + checkpoint.width/2, y + checkpoint.height/2);
+                }
+            });
+        }
+        
+        // 繪製角色
+        function drawCharacter() {
+            const x = canvas.width/2 - character.width/2;
+            const y = character.y;
+            
+            // 根據當前姿勢繪製角色
+            ctx.save();
+            
+            // 角色身體
+            ctx.fillStyle = currentPose ? currentPose.color : character.color;
+            ctx.fillRect(x, y, character.width, character.height);
+            
+            // 角色頭部
+            ctx.fillStyle = '#ffccbc';
+            ctx.beginPath();
+            ctx.arc(x + character.width/2, y - 10, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 根據姿勢繪製不同的姿勢
+            if (currentPose) {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                
+                switch(currentPose.id) {
+                    case 1: // 樹式
+                        // 繪製單腳站立
+                        ctx.beginPath();
+                        ctx.moveTo(x + character.width/2, y + 20);
+                        ctx.lineTo(x + character.width/2, y + character.height - 10);
+                        ctx.stroke();
+                        
+                        // 繪製手臂上舉
+                        ctx.beginPath();
+                        ctx.moveTo(x + character.width/2, y + 40);
+                        ctx.lineTo(x + character.width/2, y - 30);
+                        ctx.stroke();
+                        break;
+                        
+                    case 2: // 戰士二式
+                        // 繪製前後腿
+                        ctx.beginPath();
+                        ctx.moveTo(x + character.width/2, y + 40);
+                        ctx.lineTo(x + character.width/2 - 30, y + character.height - 10);
+                        ctx.moveTo(x + character.width/2, y + 40);
+                        ctx.lineTo(x + character.width/2 + 40, y + character.height - 10);
+                        ctx.stroke();
+                        
+                        // 繪製伸展的手臂
+                        ctx.beginPath();
+                        ctx.moveTo(x + character.width/2, y + 60);
+                        ctx.lineTo(x + character.width/2 - 40, y + 80);
+                        ctx.moveTo(x + character.width/2, y + 60);
+                        ctx.lineTo(x + character.width/2 + 40, y + 80);
+                        ctx.stroke();
+                        break;
+                        
+                    case 3: // 下犬式
+                        // 繪製倒V字形
+                        ctx.beginPath();
+                        ctx.moveTo(x + character.width/2, y + 10);
+                        ctx.lineTo(x + character.width/2 - 30, y + character.height - 10);
+                        ctx.lineTo(x + character.width/2 + 30, y + character.height - 10);
+                        ctx.closePath();
+                        ctx.stroke();
+                        break;
+                }
+            }
+            
+            // 角色眼睛
+            ctx.fillStyle = '#333333';
+            ctx.beginPath();
+            ctx.arc(x + character.width/2 - 8, y - 15, 3, 0, Math.PI * 2);
+            ctx.arc(x + character.width/2 + 8, y - 15, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 角色微笑
+            ctx.beginPath();
+            ctx.arc(x + character.width/2, y - 5, 8, 0, Math.PI);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // 繪製終點線
+        function drawFinishLine() {
+            const x = levelCompleteX - character.x + canvas.width/2 - character.width/2;
+            
+            // 終點線旗幟
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(x, canvas.height - 180, 5, 100);
+            
+            // 旗幟
+            ctx.fillStyle = '#81c784';
+            ctx.beginPath();
+            ctx.moveTo(x + 5, canvas.height - 180);
+            ctx.lineTo(x + 50, canvas.height - 160);
+            ctx.lineTo(x + 5, canvas.height - 140);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 終點文字
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('終點', x + 25, canvas.height - 190);
+        }
+        
+        // 更新姿勢計時器顯示
+        function updatePoseTimerDisplay() {
+            if (!currentPose) return;
+            
+            const timeLeft = Math.max(0, poseTimeLimit - poseTimer);
+            poseTimerElement.textContent = timeLeft.toFixed(1) + '秒';
+            
+            // 更新姿勢計時器填充
+            const percentLeft = (poseTimeLimit - poseTimer) / poseTimeLimit * 100;
+            poseTimerFillElement.style.width = Math.max(0, percentLeft) + '%';
+            
+            // 時間緊迫時改變顏色
+            if (timeLeft < 3) {
+                poseTimerFillElement.style.backgroundColor = '#F44336';
+                poseTimerElement.style.color = '#F44336';
+            } else if (timeLeft < 6) {
+                poseTimerFillElement.style.backgroundColor = '#FF9800';
+                poseTimerElement.style.color = '#FF9800';
+            } else {
+                poseTimerFillElement.style.backgroundColor = currentPose.color;
+                poseTimerElement.style.color = '#333';
+            }
+        }
+        
+        // 更新分數顯示
+        function updateScoreDisplay() {
+            scoreElement.textContent = Math.round(score);
+        }
+        
+        // 更新能量顯示
+        function updateEnergyDisplay() {
+            energyElement.textContent = Math.round(energy);
+            
+            // 更新能量條顏色
+            if (energy < 30) {
+                energyElement.style.color = '#F44336';
+            } else if (energy < 60) {
+                energyElement.style.color = '#FF9800';
+            } else {
+                energyElement.style.color = '#1b5e20';
+            }
+        }
+        
+        // 更新關卡顯示
+        function updateLevelDisplay() {
+            levelElement.textContent = level;
+        }
+        
+        // 更新姿勢完成顯示
+        function updatePosesCompletedDisplay() {
+            posesCompletedElement.textContent = posesCompleted;
+        }
+        
+        // 更新連擊顯示
+        function updateComboDisplay() {
+            comboElement.textContent = combo;
+            
+            // 更新最高連擊
+            if (combo > maxCombo) {
+                maxCombo = combo;
+            }
+            
+            // 連擊數高時添加特效
+            if (combo >= 5) {
+                comboElement.classList.add('pulse');
+                comboElement.style.color = '#FF9800';
+            } else if (combo >= 10) {
+                comboElement.style.color = '#F44336';
+            } else {
+                comboElement.classList.remove('pulse');
+                comboElement.style.color = '#1b5e20';
+            }
+        }
+        
+        // 更新進度條
+        function updateProgressBar() {
+            const progressPercent = Math.min(100, levelProgress * 100);
+            levelProgressElement.style.width = progressPercent + '%';
+            progressTextElement.textContent = Math.round(progressPercent) + '%';
+        }
+        
+        // 更新所有顯示
+        function updateDisplay() {
+            updateScoreDisplay();
+            updateEnergyDisplay();
+            updateLevelDisplay();
+            updatePosesCompletedDisplay();
+            updateComboDisplay();
+            updateProgressBar();
+        }
+        
+        // 更新最高分顯示
+        function updateHighScoresDisplay() {
+            highScoreEasyElement.textContent = Math.round(highScores.easy);
+            highScoreMediumElement.textContent = Math.round(highScores.medium);
+            highScoreHardElement.textContent = Math.round(highScores.hard);
+        }
+        
+        // 完成姿勢
+        function completePose() {
+            if (!currentPose) return;
+            
+            // 增加分數
+            const difficulty = difficulties[currentDifficulty];
+            const basePoints = currentPose.points;
+            const timeBonus = Math.max(0, poseTimeLimit - poseTimer) * 10;
+            const comboBonus = combo * 20;
+            const difficultyMultiplier = difficulty.scoreMultiplier;
+            
+            const poseScore = Math.round((basePoints + timeBonus + comboBonus) * difficultyMultiplier);
+            score += poseScore;
+            
+            // 增加姿勢完成計數
+            posesCompleted++;
+            
+            // 增加連擊
+            combo++;
+            
+            // 恢復能量
+            energy = Math.min(maxEnergy, energy + 5);
+            
+            // 更新顯示
+            updateDisplay();
+            
+            // 重置姿勢計時器
+            poseTimer = 0;
+            
+            // 隨機選擇下一個姿勢
+            const nextPoseId = Math.floor(Math.random() * yogaPoses.length) + 1;
+            selectPose(nextPoseId);
+            
+            // 應用新姿勢效果
+            applyPoseEffect();
+        }
+        
+        // 完成關卡
+        function completeLevel() {
+            gameRunning = false;
+            
+            // 計算關卡分數
+            const difficulty = difficulties[currentDifficulty];
+            const levelBaseScore = 1000 * level;
+            const energyBonus = energy * 10;
+            const comboBonus = maxCombo * 50;
+            const accuracyBonus = posesCompleted > 0 ? (posesCompleted / (posesCompleted + 3)) * 500 : 0;
+            const difficultyMultiplier = difficulty.scoreMultiplier;
+            
+            const levelScore = Math.round((levelBaseScore + energyBonus + comboBonus + accuracyBonus) * difficultyMultiplier);
+            score += levelScore;
+            
+            // 更新關卡完成畫面
+            levelScoreElement.textContent = levelScore;
+            accuracyElement.textContent = posesCompleted > 0 ? Math.round((posesCompleted / (posesCompleted + 3)) * 100) + '%' : '0%';
+            timeBonusElement.textContent = Math.round(energyBonus * difficultyMultiplier);
+            comboBonusElement.textContent = Math.round(comboBonus * difficultyMultiplier);
+            totalLevelScoreElement.textContent = levelScore;
+            
+            // 顯示關卡完成畫面
+            levelCompleteScreen.style.display = 'flex';
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            gameRunning = false;
+            
+            // 更新最終統計數據
+            finalScoreElement.textContent = Math.round(score);
+            finalLevelElement.textContent = level;
+            finalPosesElement.textContent = posesCompleted;
+            finalComboElement.textContent = maxCombo;
+            finalDifficultyElement.textContent = getDifficultyName(currentDifficulty);
+            
+            // 檢查是否為新的最高分
+            if (score > highScores[currentDifficulty]) {
+                highScores[currentDifficulty] = Math.round(score);
+                localStorage.setItem(`yogaHighScore${capitalizeFirstLetter(currentDifficulty)}`, Math.round(score));
+                updateHighScoresDisplay();
+            }
+            
+            // 顯示遊戲結束畫面
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // 獲取難度名稱
+        function getDifficultyName(difficulty) {
+            const names = {
+                easy: '初學者',
+                medium: '進階者',
+                hard: '大師級'
+            };
+            return names[difficulty];
+        }
+        
+        // 首字母大寫函數
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+        
+        // 事件監聽器
+        startBtn.addEventListener('click', startGame);
+        
+        pauseBtn.addEventListener('click', togglePause);
+        
+        resetBtn.addEventListener('click', () => {
+            resetGame();
+            draw();
+        });
+        
+        difficultyBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // 更新活動按鈕
+                difficultyBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // 更新難度
+                currentDifficulty = btn.dataset.difficulty;
+                
+                // 重置遊戲
+                resetGame();
+                draw();
+            });
+        });
+        
+        retryBtn.addEventListener('click', () => {
+            gameOverScreen.style.display = 'none';
+            resetGame();
+            startGame();
+        });
+        
+        nextLevelBtn.addEventListener('click', () => {
+            levelCompleteScreen.style.display = 'none';
+            
+            // 進入下一關
+            level++;
+            posesCompleted = 0;
+            combo = 0;
+            maxCombo = 0;
+            
+            // 生成新關卡
+            generateLevel();
+            
+            // 重置角色位置
+            character.x = 100;
+            character.y = canvas.height - 200;
+            
+            // 更新顯示
+            updateDisplay();
+            
+            // 開始遊戲
+            startGame();
+        });
+        
+        // 鍵盤控制
+        document.addEventListener('keydown', (e) => {
+            // 數字鍵 1-6 選擇姿勢
+            if (e.key >= '1' && e.key <= '6') {
+                const poseId = parseInt(e.key);
+                if (poseId <= yogaPoses.length) {
+                    selectPose(poseId);
+                }
+            }
+            
+            // 空格鍵開始/暫停遊戲
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                if (!gameRunning) {
+                    startGame();
+                } else {
+                    togglePause();
+                }
+            }
+            
+            // P鍵暫停遊戲
+            if (e.key === 'p' || e.key === 'P') {
+                togglePause();
+            }
+            
+            // R鍵重置遊戲
+            if (e.key === 'r' || e.key === 'R') {
+                resetGame();
+                draw();
+            }
+            
+            // Enter鍵完成姿勢（用於測試）
+            if (e.key === 'Enter' && gameRunning && !gamePaused) {
+                completePose();
+            }
+        });
+        
+        // 窗口大小改變時重新初始化畫布
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            generateLevel();
+            draw();
+        });
+        
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>

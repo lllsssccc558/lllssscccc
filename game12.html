@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML5 動作捕捉遊戲：體感忍者</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a1929, #152642);
+            padding: 20px;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.3);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid rgba(0, 150, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 255, 150, 0.1) 0%, transparent 50%);
+            z-index: -1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 3.2rem;
+            text-shadow: 
+                0 0 10px #00aaff,
+                0 0 20px #00aaff,
+                0 0 30px #00aaff;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #00aaff, #00ffaa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            0% { filter: drop-shadow(0 0 5px #00aaff); }
+            100% { filter: drop-shadow(0 0 15px #00ffaa); }
+        }
+        
+        .subtitle {
+            color: #bbbbbb;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .game-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 768px) {
+            .game-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .info-box {
+            background: linear-gradient(145deg, rgba(0, 100, 200, 0.5), rgba(0, 50, 150, 0.5));
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+        
+        .info-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            color: #99ddff;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        .score-value {
+            color: #ffff00;
+        }
+        
+        .combo-value {
+            color: #00ffff;
+        }
+        
+        .accuracy-value {
+            color: #00ff00;
+        }
+        
+        .high-score-value {
+            color: #ff9900;
+        }
+        
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        
+        @media (max-width: 900px) {
+            .game-area {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .game-screen {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(to bottom, #001122, #000811);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(0, 150, 255, 0.5);
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.3),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: linear-gradient(to bottom, #112233, #001122);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(0, 200, 100, 0.5);
+            box-shadow: 
+                0 0 30px rgba(0, 200, 100, 0.3),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        #cameraVideo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            z-index: 1;
+        }
+        
+        #cameraCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+        }
+        
+        .control-mode {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(0, 100, 200, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+        }
+        
+        .control-mode label {
+            font-size: 1.1rem;
+            color: #99ddff;
+        }
+        
+        .control-mode select {
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid rgba(0, 150, 255, 0.5);
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .control-mode select:focus {
+            outline: none;
+            border-color: #00aaff;
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
+        }
+        
+        .game-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            justify-content: center;
+        }
+        
+        .difficulty-selector, .main-controls, .camera-controls {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .control-label {
+            margin-bottom: 10px;
+            color: #99ddff;
+            font-weight: 500;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .difficulty-buttons, .control-buttons, .camera-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .difficulty-btn, .control-btn, .camera-btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        .difficulty-btn {
+            background: rgba(0, 100, 200, 0.5);
+            color: #ccffff;
+            border: 1px solid rgba(0, 150, 255, 0.3);
+        }
+        
+        .difficulty-btn:hover {
+            background: rgba(0, 100, 200, 0.7);
+        }
+        
+        .difficulty-btn.active {
+            background: linear-gradient(90deg, #00aaff, #0066cc);
+            color: white;
+            box-shadow: 0 0 15px #00aaff;
+        }
+        
+        .control-btn {
+            background: linear-gradient(90deg, #00cc66, #009944);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 204, 102, 0.4);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .control-btn.pause {
+            background: linear-gradient(90deg, #ffff00, #ffcc00);
+        }
+        
+        .control-btn.restart {
+            background: linear-gradient(90deg, #ff4444, #cc0000);
+        }
+        
+        .camera-btn {
+            background: linear-gradient(90deg, #aa44ff, #8800cc);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .camera-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(170, 68, 255, 0.4);
+        }
+        
+        .combo-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            font-weight: bold;
+            color: #ffff00;
+            text-shadow: 
+                0 0 10px #ffff00,
+                0 0 20px #ffff00,
+                0 0 30px #ffff00;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            transition: opacity 0.3s;
+        }
+        
+        .hit-display {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: all 0.3s;
+        }
+        
+        .perfect {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .great {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .good {
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+        }
+        
+        .miss {
+            color: #ff4444;
+            text-shadow: 0 0 10px #ff4444;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 10px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #99ddff;
+            border-bottom: 2px solid rgba(153, 221, 255, 0.3);
+            padding-bottom: 8px;
+            font-size: 1.5rem;
+        }
+        
+        .instructions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .instruction-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 150, 255, 0.1);
+        }
+        
+        .instruction-item h4 {
+            color: #00ffaa;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 0 5px;
+            font-family: monospace;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .key.arrow {
+            color: white;
+        }
+        
+        .key.left {
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+        }
+        
+        .key.right {
+            background: linear-gradient(145deg, #4444ff, #0000cc);
+        }
+        
+        .key.up {
+            background: linear-gradient(145deg, #44ff44, #00cc00);
+        }
+        
+        .key.space {
+            background: linear-gradient(145deg, #ffff44, #cccc00);
+            min-width: 80px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00aaff, #00ffaa);
+            width: 0%;
+            transition: width 0.3s;
+            border-radius: 5px;
+        }
+        
+        .game-info-bottom {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+        
+        .game-time {
+            font-size: 1.3rem;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        
+        .game-difficulty {
+            font-size: 1.1rem;
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        .calibration-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ff0000;
+            border-radius: 50%;
+            border: 2px solid white;
+            z-index: 10;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-screen, .camera-container {
+                height: 400px;
+            }
+            
+            .combo-display {
+                font-size: 4rem;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .difficulty-selector, .main-controls, .camera-controls {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .game-screen, .camera-container {
+                height: 350px;
+            }
+            
+            .info-value {
+                font-size: 1.5rem;
+            }
+            
+            .combo-display {
+                font-size: 3rem;
+            }
+            
+            .hit-display {
+                font-size: 2rem;
+            }
+        }
+        
+        .target-count {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1.1rem;
+            z-index: 20;
+            border: 1px solid rgba(0, 150, 255, 0.5);
+        }
+        
+        .calibration-guide {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            z-index: 20;
+            border: 1px solid rgba(0, 200, 100, 0.5);
+            max-width: 300px;
+        }
+        
+        .gesture-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            z-index: 20;
+            border: 1px solid rgba(255, 200, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>體感忍者</h1>
+            <p class="subtitle">使用動作捕捉或鍵盤控制擊中目標！</p>
+        </header>
+        
+        <div class="game-info">
+            <div class="info-box">
+                <div class="info-label">分數</div>
+                <div class="info-value score-value" id="currentScore">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">連擊</div>
+                <div class="info-value combo-value" id="comboCount">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">準確率</div>
+                <div class="info-value accuracy-value" id="accuracy">100%</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">最高分</div>
+                <div class="info-value high-score-value" id="highScore">0</div>
+            </div>
+        </div>
+        
+        <div class="game-info-bottom">
+            <div class="game-time" id="gameTime">時間: 00:00</div>
+            <div class="game-difficulty" id="currentDifficulty">難度: 簡單</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="gameProgress"></div>
+        </div>
+        
+        <div class="game-area">
+            <div class="game-screen">
+                <canvas id="gameCanvas"></canvas>
+                <div class="target-count" id="targetCount">目標: 0</div>
+            </div>
+            
+            <div class="camera-container">
+                <video id="cameraVideo" autoplay muted playsinline></video>
+                <canvas id="cameraCanvas"></canvas>
+                <div class="camera-overlay" id="cameraOverlay">
+                    <div id="cameraStatus">正在啟動攝像頭...</div>
+                    <div id="cameraHint" style="margin-top: 10px; font-size: 1rem; color: #cccccc;">
+                        如果無法使用攝像頭，請選擇鍵盤控制模式
+                    </div>
+                </div>
+                <div class="calibration-guide" id="calibrationGuide" style="display: none;">
+                    校準提示: 請站在攝像頭前，雙手舉起<br>
+                    紅色點表示檢測到的手部位置
+                </div>
+                <div class="gesture-indicator" id="gestureIndicator" style="display: none;">
+                    手勢: <span id="currentGesture">未檢測到</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="control-mode">
+                <label for="controlMode">控制模式:</label>
+                <select id="controlMode">
+                    <option value="keyboard">鍵盤控制</option>
+                    <option value="camera">攝像頭控制</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="hit-display" id="hitDisplay"></div>
+        <div class="combo-display" id="comboDisplay"></div>
+        
+        <div class="game-controls">
+            <div class="difficulty-selector">
+                <div class="control-label">選擇難度</div>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn active" data-difficulty="easy">簡單</button>
+                    <button class="difficulty-btn" data-difficulty="normal">普通</button>
+                    <button class="difficulty-btn" data-difficulty="hard">困難</button>
+                    <button class="difficulty-btn" data-difficulty="expert">專家</button>
+                </div>
+            </div>
+            
+            <div class="main-controls">
+                <div class="control-label">遊戲控制</div>
+                <div class="control-buttons">
+                    <button class="control-btn" id="startBtn">開始遊戲</button>
+                    <button class="control-btn pause" id="pauseBtn" disabled>暫停</button>
+                    <button class="control-btn restart" id="restartBtn">重新開始</button>
+                </div>
+            </div>
+            
+            <div class="camera-controls">
+                <div class="control-label">攝像頭控制</div>
+                <div class="camera-buttons">
+                    <button class="camera-btn" id="calibrateBtn" disabled>校準攝像頭</button>
+                    <button class="camera-btn" id="toggleCameraBtn">開啟攝像頭</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>遊戲說明與控制</h3>
+            <div class="instructions-grid">
+                <div class="instruction-item">
+                    <h4>遊戲玩法</h4>
+                    <p>使用動作或鍵盤擊中屏幕上出現的目標。</p>
+                    <p>不同顏色的目標有不同的分數：</p>
+                    <p>• <span style="color:#ff4444">紅色目標</span>: 10分</p>
+                    <p>• <span style="color:#ffff00">黃色目標</span>: 20分</p>
+                    <p>• <span style="color:#00ff00">綠色目標</span>: 30分</p>
+                    <p>• <span style="color:#00aaff">藍色目標</span>: 50分</p>
+                    <p>• <span style="color:#aa44ff">紫色目標</span>: 100分 (特殊目標)</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>鍵盤控制</h4>
+                    <p><span class="key left">←</span> 左拳攻擊 (左側目標)</p>
+                    <p><span class="key right">→</span> 右拳攻擊 (右側目標)</p>
+                    <p><span class="key up">↑</span> 上踢攻擊 (上方目標)</p>
+                    <p><span class="key space">空格鍵</span> 跳躍攻擊 (所有目標)</p>
+                    <p><span class="key">P</span>: 暫停/繼續遊戲</p>
+                    <p><span class="key">ESC</span>: 重新開始</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>動作控制</h4>
+                    <p>• 舉起左手: 左拳攻擊</p>
+                    <p>• 舉起右手: 右拳攻擊</p>
+                    <p>• 雙手舉起: 跳躍攻擊</p>
+                    <p>• 快速揮動: 特殊攻擊</p>
+                    <p>請確保攝像頭能看到你的上半身</p>
+                    <p>開始遊戲前請先校準攝像頭</p>
+                </div>
+                <div class="instruction-item">
+                    <h4>難度說明</h4>
+                    <p>• <strong>簡單</strong>: 目標速度慢，數量少</p>
+                    <p>• <strong>普通</strong>: 中等速度，標準目標密度</p>
+                    <p>• <strong>困難</strong>: 快速目標，高密度</p>
+                    <p>• <strong>專家</strong>: 極速目標，特殊目標多</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>HTML5 動作捕捉遊戲 - 使用Canvas和JavaScript實現 | 挑戰你的反應和協調能力！</p>
+    </div>
+
+    <script>
+        // 遊戲變數
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gameCtx = gameCanvas.getContext('2d');
+        const cameraVideo = document.getElementById('cameraVideo');
+        const cameraCanvas = document.getElementById('cameraCanvas');
+        const cameraCtx = cameraCanvas.getContext('2d');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const calibrationGuide = document.getElementById('calibrationGuide');
+        const gestureIndicator = document.getElementById('gestureIndicator');
+        const currentGestureElement = document.getElementById('currentGesture');
+        
+        const currentScoreElement = document.getElementById('currentScore');
+        const comboCountElement = document.getElementById('comboCount');
+        const accuracyElement = document.getElementById('accuracy');
+        const highScoreElement = document.getElementById('highScore');
+        const gameTimeElement = document.getElementById('gameTime');
+        const targetCountElement = document.getElementById('targetCount');
+        const gameProgressElement = document.getElementById('gameProgress');
+        const hitDisplay = document.getElementById('hitDisplay');
+        const comboDisplay = document.getElementById('comboDisplay');
+        const currentDifficultyElement = document.getElementById('currentDifficulty');
+        
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const calibrateBtn = document.getElementById('calibrateBtn');
+        const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+        const controlModeSelect = document.getElementById('controlMode');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        
+        // 遊戲設定
+        const GAME_WIDTH = gameCanvas.width = 600;
+        const GAME_HEIGHT = gameCanvas.height = 500;
+        const CAMERA_WIDTH = cameraCanvas.width = 600;
+        const CAMERA_HEIGHT = cameraCanvas.height = 500;
+        
+        // 遊戲狀態
+        let gameActive = false;
+        let gamePaused = false;
+        let gameOver = false;
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let hits = 0;
+        let totalTargets = 0;
+        let accuracy = 100;
+        let highScore = localStorage.getItem('motionNinjaHighScore') || 0;
+        let currentDifficulty = 'easy';
+        let controlMode = 'keyboard'; // 'keyboard' or 'camera'
+        let gameStartTime = 0;
+        let gameDuration = 60000; // 60秒遊戲時間
+        let targets = [];
+        let particles = [];
+        let gameLoopId = null;
+        
+        // 動作捕捉狀態
+        let cameraActive = false;
+        let calibrationPoints = [];
+        let leftHandPosition = { x: 0, y: 0, active: false };
+        let rightHandPosition = { x: 0, y: 0, active: false };
+        let lastGestureTime = 0;
+        let currentGesture = 'none';
+        
+        // 難度設定
+        const DIFFICULTY_SETTINGS = {
+            easy: {
+                targetSpeed: 2,
+                spawnRate: 1000, // 毫秒
+                targetCount: 5,
+                specialChance: 0.05,
+                scoreMultiplier: 1.0,
+                gameDuration: 60000
+            },
+            normal: {
+                targetSpeed: 3,
+                spawnRate: 800,
+                targetCount: 8,
+                specialChance: 0.1,
+                scoreMultiplier: 1.2,
+                gameDuration: 60000
+            },
+            hard: {
+                targetSpeed: 4,
+                spawnRate: 600,
+                targetCount: 12,
+                specialChance: 0.15,
+                scoreMultiplier: 1.5,
+                gameDuration: 60000
+            },
+            expert: {
+                targetSpeed: 5,
+                spawnRate: 400,
+                targetCount: 15,
+                specialChance: 0.2,
+                scoreMultiplier: 2.0,
+                gameDuration: 60000
+            }
+        };
+        
+        // 目標類型
+        const TARGET_TYPES = {
+            RED: { color: '#ff4444', score: 10, radius: 25, life: 1 },
+            YELLOW: { color: '#ffff00', score: 20, radius: 22, life: 1 },
+            GREEN: { color: '#00ff00', score: 30, radius: 20, life: 1 },
+            BLUE: { color: '#00aaff', score: 50, radius: 18, life: 2 },
+            PURPLE: { color: '#aa44ff', score: 100, radius: 30, life: 3 }
+        };
+        
+        // 更新最高分顯示
+        highScoreElement.textContent = highScore;
+        
+        // 初始化遊戲畫布
+        function initGameCanvas() {
+            gameCanvas.width = gameCanvas.parentElement.clientWidth;
+            gameCanvas.height = gameCanvas.parentElement.clientHeight;
+            
+            // 更新遊戲區域
+            gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        }
+        
+        // 初始化攝像頭畫布
+        function initCameraCanvas() {
+            cameraCanvas.width = cameraCanvas.parentElement.clientWidth;
+            cameraCanvas.height = cameraCanvas.parentElement.clientHeight;
+        }
+        
+        // 啟動攝像頭
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
+                
+                cameraVideo.srcObject = stream;
+                cameraActive = true;
+                cameraStatus.textContent = '攝像頭已啟動';
+                cameraOverlay.style.display = 'none';
+                calibrationGuide.style.display = 'block';
+                gestureIndicator.style.display = 'block';
+                calibrateBtn.disabled = false;
+                toggleCameraBtn.textContent = '關閉攝像頭';
+                
+                // 開始處理攝像頭畫面
+                processCameraFrame();
+                
+            } catch (error) {
+                console.error('無法啟動攝像頭:', error);
+                cameraStatus.textContent = '無法啟動攝像頭';
+                cameraStatus.style.color = '#ff4444';
+                
+                // 切換到鍵盤模式
+                controlModeSelect.value = 'keyboard';
+                controlMode = 'keyboard';
+                updateControlMode();
+            }
+        }
+        
+        // 停止攝像頭
+        function stopCamera() {
+            if (cameraVideo.srcObject) {
+                const tracks = cameraVideo.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                cameraVideo.srcObject = null;
+            }
+            
+            cameraActive = false;
+            cameraOverlay.style.display = 'flex';
+            cameraStatus.textContent = '攝像頭已關閉';
+            calibrationGuide.style.display = 'none';
+            gestureIndicator.style.display = 'none';
+            calibrateBtn.disabled = true;
+            toggleCameraBtn.textContent = '開啟攝像頭';
+        }
+        
+        // 處理攝像頭畫面
+        function processCameraFrame() {
+            if (!cameraActive || gamePaused) return;
+            
+            // 繪製視頻畫面
+            cameraCtx.clearRect(0, 0, cameraCanvas.width, cameraCanvas.height);
+            cameraCtx.save();
+            cameraCtx.scale(-1, 1);
+            cameraCtx.drawImage(cameraVideo, -cameraCanvas.width, 0, cameraCanvas.width, cameraCanvas.height);
+            cameraCtx.restore();
+            
+            // 簡單的動作檢測（顏色檢測）
+            detectMotion();
+            
+            // 繪製校準點和手部位置
+            drawCalibrationPoints();
+            
+            // 繼續處理下一幀
+            requestAnimationFrame(processCameraFrame);
+        }
+        
+        // 檢測動作（簡化版）
+        function detectMotion() {
+            // 這是一個簡化的動作檢測系統
+            // 在實際應用中，您可能需要使用更複雜的算法或庫（如TensorFlow.js、MediaPipe等）
+            
+            if (!calibrationPoints.length) return;
+            
+            // 獲取視頻數據
+            cameraCtx.drawImage(cameraVideo, 0, 0, 100, 75);
+            const imageData = cameraCtx.getImageData(0, 0, 100, 75);
+            const data = imageData.data;
+            
+            // 簡單的膚色檢測
+            let handPixels = [];
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                
+                // 膚色檢測（簡化）
+                if (r > 100 && g > 50 && b > 50 && r > g && r > b) {
+                    const pixelIndex = i / 4;
+                    const x = pixelIndex % 100;
+                    const y = Math.floor(pixelIndex / 100);
+                    handPixels.push({ x, y });
+                }
+            }
+            
+            // 如果有足夠的膚色像素，計算手部位置
+            if (handPixels.length > 50) {
+                const avgX = handPixels.reduce((sum, p) => sum + p.x, 0) / handPixels.length;
+                const avgY = handPixels.reduce((sum, p) => sum + p.y, 0) / handPixels.length;
+                
+                // 映射到畫布坐標
+                const canvasX = (avgX / 100) * cameraCanvas.width;
+                const canvasY = (avgY / 75) * cameraCanvas.height;
+                
+                // 簡單的左右手判斷（基於位置）
+                if (canvasX < cameraCanvas.width / 2) {
+                    leftHandPosition = { x: canvasX, y: canvasY, active: true };
+                    currentGestureElement.textContent = '左手檢測到';
+                } else {
+                    rightHandPosition = { x: canvasX, y: canvasY, active: true };
+                    currentGestureElement.textContent = '右手檢測到';
+                }
+                
+                // 檢查是否雙手舉起（跳躍攻擊）
+                if (leftHandPosition.active && rightHandPosition.active) {
+                    const handsDistance = Math.abs(leftHandPosition.y - rightHandPosition.y);
+                    if (handsDistance < 50) {
+                        currentGestureElement.textContent = '雙手舉起';
+                        currentGesture = 'jump';
+                        
+                        // 觸發跳躍攻擊
+                        if (Date.now() - lastGestureTime > 500) {
+                            lastGestureTime = Date.now();
+                            if (gameActive) triggerJumpAttack();
+                        }
+                    }
+                }
+                
+                // 檢查揮動動作
+                if (Date.now() - lastGestureTime > 200) {
+                    // 檢查左拳
+                    if (leftHandPosition.active && leftHandPosition.y < cameraCanvas.height * 0.3) {
+                        currentGestureElement.textContent = '左拳攻擊';
+                        currentGesture = 'leftPunch';
+                        lastGestureTime = Date.now();
+                        if (gameActive) triggerLeftAttack();
+                    }
+                    
+                    // 檢查右拳
+                    if (rightHandPosition.active && rightHandPosition.y < cameraCanvas.height * 0.3) {
+                        currentGestureElement.textContent = '右拳攻擊';
+                        currentGesture = 'rightPunch';
+                        lastGestureTime = Date.now();
+                        if (gameActive) triggerRightAttack();
+                    }
+                }
+            } else {
+                leftHandPosition.active = false;
+                rightHandPosition.active = false;
+                currentGestureElement.textContent = '未檢測到';
+                currentGesture = 'none';
+            }
+        }
+        
+        // 繪製校準點
+        function drawCalibrationPoints() {
+            calibrationPoints.forEach(point => {
+                cameraCtx.fillStyle = '#ff0000';
+                cameraCtx.beginPath();
+                cameraCtx.arc(point.x, point.y, 10, 0, Math.PI * 2);
+                cameraCtx.fill();
+                cameraCtx.strokeStyle = '#ffffff';
+                cameraCtx.lineWidth = 2;
+                cameraCtx.stroke();
+            });
+            
+            // 繪製手部位置
+            if (leftHandPosition.active) {
+                cameraCtx.fillStyle = '#00ff00';
+                cameraCtx.beginPath();
+                cameraCtx.arc(leftHandPosition.x, leftHandPosition.y, 15, 0, Math.PI * 2);
+                cameraCtx.fill();
+                cameraCtx.fillStyle = '#ffffff';
+                cameraCtx.font = '14px Arial';
+                cameraCtx.fillText('左手', leftHandPosition.x - 15, leftHandPosition.y - 20);
+            }
+            
+            if (rightHandPosition.active) {
+                cameraCtx.fillStyle = '#00aaff';
+                cameraCtx.beginPath();
+                cameraCtx.arc(rightHandPosition.x, rightHandPosition.y, 15, 0, Math.PI * 2);
+                cameraCtx.fill();
+                cameraCtx.fillStyle = '#ffffff';
+                cameraCtx.font = '14px Arial';
+                cameraCtx.fillText('右手', rightHandPosition.x - 15, rightHandPosition.y - 20);
+            }
+        }
+        
+        // 校準攝像頭
+        function calibrateCamera() {
+            calibrationPoints = [
+                { x: cameraCanvas.width * 0.25, y: cameraCanvas.height * 0.3 },
+                { x: cameraCanvas.width * 0.75, y: cameraCanvas.height * 0.3 },
+                { x: cameraCanvas.width * 0.5, y: cameraCanvas.height * 0.7 }
+            ];
+            
+            alert('請站在攝像頭前，雙手舉起。紅色點表示參考位置。');
+        }
+        
+        // 創建目標
+        function createTarget() {
+            if (!gameActive || gamePaused || targets.length >= DIFFICULTY_SETTINGS[currentDifficulty].targetCount) {
+                return;
+            }
+            
+            const targetTypes = Object.keys(TARGET_TYPES);
+            let targetTypeKey;
+            
+            // 根據難度決定目標類型
+            const rand = Math.random();
+            if (rand < DIFFICULTY_SETTINGS[currentDifficulty].specialChance) {
+                targetTypeKey = 'PURPLE';
+            } else if (rand < 0.2) {
+                targetTypeKey = 'BLUE';
+            } else if (rand < 0.4) {
+                targetTypeKey = 'GREEN';
+            } else if (rand < 0.7) {
+                targetTypeKey = 'YELLOW';
+            } else {
+                targetTypeKey = 'RED';
+            }
+            
+            const targetType = TARGET_TYPES[targetTypeKey];
+            
+            // 隨機生成位置和移動方向
+            const side = Math.floor(Math.random() * 4); // 0:上, 1:右, 2:下, 3:左
+            let x, y, dx, dy;
+            
+            switch(side) {
+                case 0: // 上邊
+                    x = Math.random() * gameCanvas.width;
+                    y = -targetType.radius;
+                    dx = (Math.random() - 0.5) * 2;
+                    dy = Math.random() * 0.5 + 0.5;
+                    break;
+                case 1: // 右邊
+                    x = gameCanvas.width + targetType.radius;
+                    y = Math.random() * gameCanvas.height;
+                    dx = -Math.random() * 0.5 - 0.5;
+                    dy = (Math.random() - 0.5) * 2;
+                    break;
+                case 2: // 下邊
+                    x = Math.random() * gameCanvas.width;
+                    y = gameCanvas.height + targetType.radius;
+                    dx = (Math.random() - 0.5) * 2;
+                    dy = -Math.random() * 0.5 - 0.5;
+                    break;
+                case 3: // 左邊
+                    x = -targetType.radius;
+                    y = Math.random() * gameCanvas.height;
+                    dx = Math.random() * 0.5 + 0.5;
+                    dy = (Math.random() - 0.5) * 2;
+                    break;
+            }
+            
+            const speed = DIFFICULTY_SETTINGS[currentDifficulty].targetSpeed;
+            dx *= speed;
+            dy *= speed;
+            
+            targets.push({
+                x, y,
+                dx, dy,
+                radius: targetType.radius,
+                color: targetType.color,
+                score: targetType.score,
+                life: targetType.life,
+                maxLife: targetType.life,
+                type: targetTypeKey
+            });
+            
+            totalTargets++;
+            updateTargetCount();
+        }
+        
+        // 更新目標
+        function updateTargets() {
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                
+                // 更新位置
+                target.x += target.dx;
+                target.y += target.dy;
+                
+                // 邊界檢查
+                if (target.x < -target.radius * 2 || 
+                    target.x > gameCanvas.width + target.radius * 2 ||
+                    target.y < -target.radius * 2 || 
+                    target.y > gameCanvas.height + target.radius * 2) {
+                    
+                    // 目標離開屏幕，移除
+                    targets.splice(i, 1);
+                    resetCombo();
+                    continue;
+                }
+                
+                // 繪製目標
+                drawTarget(target);
+            }
+        }
+        
+        // 繪製目標
+        function drawTarget(target) {
+            // 目標主體
+            gameCtx.fillStyle = target.color;
+            gameCtx.beginPath();
+            gameCtx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            gameCtx.fill();
+            
+            // 目標邊框
+            gameCtx.strokeStyle = '#ffffff';
+            gameCtx.lineWidth = 2;
+            gameCtx.stroke();
+            
+            // 生命值顯示（如果有多條生命）
+            if (target.maxLife > 1) {
+                gameCtx.fillStyle = '#ffffff';
+                gameCtx.font = '14px Arial';
+                gameCtx.textAlign = 'center';
+                gameCtx.textBaseline = 'middle';
+                gameCtx.fillText(target.life, target.x, target.y);
+            }
+            
+            // 目標光暈
+            gameCtx.shadowColor = target.color;
+            gameCtx.shadowBlur = 15;
+            gameCtx.beginPath();
+            gameCtx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+            gameCtx.stroke();
+            gameCtx.shadowBlur = 0;
+        }
+        
+        // 創建粒子效果
+        function createParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y,
+                    dx: (Math.random() - 0.5) * 10,
+                    dy: (Math.random() - 0.5) * 10,
+                    radius: Math.random() * 3 + 2,
+                    color: color,
+                    life: 1.0
+                });
+            }
+        }
+        
+        // 更新粒子
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                
+                particle.x += particle.dx;
+                particle.y += particle.dy;
+                particle.life -= 0.02;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                
+                // 繪製粒子
+                gameCtx.globalAlpha = particle.life;
+                gameCtx.fillStyle = particle.color;
+                gameCtx.beginPath();
+                gameCtx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                gameCtx.fill();
+                gameCtx.globalAlpha = 1.0;
+            }
+        }
+        
+        // 檢查碰撞
+        function checkCollision(attackX, attackY, attackRadius, attackType) {
+            let hit = false;
+            
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                
+                // 計算距離
+                const dx = target.x - attackX;
+                const dy = target.y - attackY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 檢查是否擊中
+                if (distance < target.radius + attackRadius) {
+                    // 減少生命值
+                    target.life--;
+                    
+                    if (target.life <= 0) {
+                        // 目標被摧毀
+                        const points = target.score;
+                        updateScore(points, 'hit');
+                        hits++;
+                        
+                        // 創建粒子效果
+                        createParticles(target.x, target.y, target.color, 15);
+                        
+                        // 顯示擊中效果
+                        showHitEffect('perfect', target.x, target.y);
+                        
+                        // 移除目標
+                        targets.splice(i, 1);
+                    } else {
+                        // 目標受傷但未被摧毀
+                        showHitEffect('good', target.x, target.y);
+                        createParticles(target.x, target.y, '#ffffff', 5);
+                    }
+                    
+                    hit = true;
+                }
+            }
+            
+            if (hit) {
+                // 更新準確率
+                updateAccuracy();
+            }
+            
+            return hit;
+        }
+        
+        // 觸發左側攻擊
+        function triggerLeftAttack() {
+            if (!gameActive || gamePaused) return;
+            
+            const attackX = gameCanvas.width * 0.2;
+            const attackY = gameCanvas.height / 2;
+            const attackRadius = 60;
+            
+            // 繪製攻擊效果
+            drawAttackEffect(attackX, attackY, attackRadius, '#ff4444');
+            
+            // 檢查碰撞
+            const hit = checkCollision(attackX, attackY, attackRadius, 'left');
+            
+            if (!hit) {
+                resetCombo();
+                showHitEffect('miss', attackX, attackY);
+            }
+        }
+        
+        // 觸發右側攻擊
+        function triggerRightAttack() {
+            if (!gameActive || gamePaused) return;
+            
+            const attackX = gameCanvas.width * 0.8;
+            const attackY = gameCanvas.height / 2;
+            const attackRadius = 60;
+            
+            // 繪製攻擊效果
+            drawAttackEffect(attackX, attackY, attackRadius, '#4444ff');
+            
+            // 檢查碰撞
+            const hit = checkCollision(attackX, attackY, attackRadius, 'right');
+            
+            if (!hit) {
+                resetCombo();
+                showHitEffect('miss', attackX, attackY);
+            }
+        }
+        
+        // 觸發跳躍攻擊
+        function triggerJumpAttack() {
+            if (!gameActive || gamePaused) return;
+            
+            const attackX = gameCanvas.width / 2;
+            const attackY = gameCanvas.height / 2;
+            const attackRadius = 100;
+            
+            // 繪製攻擊效果
+            drawAttackEffect(attackX, attackY, attackRadius, '#ffff00');
+            
+            // 檢查碰撞
+            const hit = checkCollision(attackX, attackY, attackRadius, 'jump');
+            
+            if (!hit) {
+                resetCombo();
+                showHitEffect('miss', attackX, attackY);
+            }
+        }
+        
+        // 繪製攻擊效果
+        function drawAttackEffect(x, y, radius, color) {
+            // 攻擊圓環
+            gameCtx.strokeStyle = color;
+            gameCtx.lineWidth = 3;
+            gameCtx.beginPath();
+            gameCtx.arc(x, y, radius, 0, Math.PI * 2);
+            gameCtx.stroke();
+            
+            // 攻擊擴散效果
+            gameCtx.globalAlpha = 0.3;
+            gameCtx.beginPath();
+            gameCtx.arc(x, y, radius + 10, 0, Math.PI * 2);
+            gameCtx.stroke();
+            gameCtx.globalAlpha = 1.0;
+            
+            // 創建攻擊粒子
+            createParticles(x, y, color, 8);
+        }
+        
+        // 更新分數
+        function updateScore(points, judgment) {
+            // 應用難度倍率
+            const multiplier = DIFFICULTY_SETTINGS[currentDifficulty].scoreMultiplier;
+            const basePoints = Math.round(points * multiplier);
+            
+            // 連擊加成
+            const comboBonus = Math.floor(combo / 10) * 0.1; // 每10連擊增加10%
+            const totalPoints = Math.round(basePoints * (1 + comboBonus));
+            
+            score += totalPoints;
+            currentScoreElement.textContent = score;
+            
+            // 更新連擊
+            combo++;
+            comboCountElement.textContent = combo;
+            
+            if (combo > maxCombo) {
+                maxCombo = combo;
+            }
+            
+            // 顯示連擊特效
+            if (combo % 10 === 0 && combo > 0) {
+                showComboEffect();
+            }
+        }
+        
+        // 重置連擊
+        function resetCombo() {
+            combo = 0;
+            comboCountElement.textContent = combo;
+        }
+        
+        // 更新準確率
+        function updateAccuracy() {
+            if (totalTargets > 0) {
+                accuracy = Math.round((hits / totalTargets) * 10000) / 100;
+                accuracyElement.textContent = `${accuracy}%`;
+            }
+        }
+        
+        // 更新目標計數
+        function updateTargetCount() {
+            targetCountElement.textContent = `目標: ${targets.length}/${DIFFICULTY_SETTINGS[currentDifficulty].targetCount}`;
+        }
+        
+        // 顯示擊中效果
+        function showHitEffect(judgment, x, y) {
+            hitDisplay.textContent = getJudgmentText(judgment);
+            hitDisplay.className = `hit-display ${judgment}`;
+            hitDisplay.style.opacity = '1';
+            hitDisplay.style.left = `${x}px`;
+            hitDisplay.style.top = `${y}px`;
+            
+            // 動畫效果
+            setTimeout(() => {
+                hitDisplay.style.opacity = '0';
+                hitDisplay.style.transform = 'translateX(-50%) translateY(-20px)';
+            }, 500);
+            
+            // 重置位置
+            setTimeout(() => {
+                hitDisplay.style.transform = 'translateX(-50%)';
+            }, 600);
+        }
+        
+        // 顯示連擊特效
+        function showComboEffect() {
+            comboDisplay.textContent = `${combo} COMBO!`;
+            comboDisplay.style.opacity = '1';
+            comboDisplay.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            // 動畫效果
+            setTimeout(() => {
+                comboDisplay.style.opacity = '0';
+                comboDisplay.style.transform = 'translate(-50%, -50%) scale(0.5)';
+            }, 1000);
+        }
+        
+        // 獲取判斷文字
+        function getJudgmentText(judgment) {
+            switch(judgment) {
+                case 'perfect': return '完美!';
+                case 'great': return '優秀!';
+                case 'good': return '良好';
+                case 'miss': return '錯過...';
+                case 'hit': return '擊中!';
+                default: return '';
+            }
+        }
+        
+        // 更新遊戲時間
+        function updateGameTime() {
+            if (!gameActive || gamePaused) return;
+            
+            const currentTime = Date.now() - gameStartTime;
+            const timeLeft = Math.max(0, gameDuration - currentTime);
+            
+            // 格式化時間顯示
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            gameTimeElement.textContent = `時間: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 更新進度條
+            const progress = Math.min(100, (currentTime / gameDuration) * 100);
+            gameProgressElement.style.width = `${progress}%`;
+            
+            // 檢查遊戲是否結束
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            if (gameActive && !gamePaused) return;
+            
+            // 如果遊戲已結束或未開始，重置遊戲
+            if (gameOver || !gameActive) {
+                resetGameState();
+            }
+            
+            gameActive = true;
+            gamePaused = false;
+            gameOver = false;
+            
+            startBtn.textContent = '重新開始';
+            pauseBtn.disabled = false;
+            pauseBtn.textContent = '暫停';
+            
+            // 設置遊戲時間
+            gameDuration = DIFFICULTY_SETTINGS[currentDifficulty].gameDuration;
+            gameStartTime = Date.now();
+            
+            // 更新顯示
+            currentDifficultyElement.textContent = `難度: ${getDifficultyText(currentDifficulty)}`;
+            
+            // 開始遊戲循環
+            if (gameLoopId) clearInterval(gameLoopId);
+            gameLoopId = setInterval(gameLoop, 16); // ~60fps
+            
+            // 開始生成目標
+            const spawnRate = DIFFICULTY_SETTINGS[currentDifficulty].spawnRate;
+            setInterval(createTarget, spawnRate);
+            
+            // 初始創建一些目標
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createTarget(), i * 500);
+            }
+        }
+        
+        // 遊戲主循環
+        function gameLoop() {
+            if (!gameActive || gamePaused) return;
+            
+            // 清除畫布
+            gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // 繪製背景
+            drawBackground();
+            
+            // 更新和繪製目標
+            updateTargets();
+            
+            // 更新和繪製粒子
+            updateParticles();
+            
+            // 更新遊戲時間
+            updateGameTime();
+        }
+        
+        // 繪製背景
+        function drawBackground() {
+            // 漸變背景
+            const gradient = gameCtx.createLinearGradient(0, 0, 0, gameCanvas.height);
+            gradient.addColorStop(0, '#001122');
+            gradient.addColorStop(1, '#000811');
+            gameCtx.fillStyle = gradient;
+            gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            // 網格線
+            gameCtx.strokeStyle = 'rgba(0, 150, 255, 0.1)';
+            gameCtx.lineWidth = 1;
+            
+            // 垂直線
+            for (let x = 0; x < gameCanvas.width; x += 50) {
+                gameCtx.beginPath();
+                gameCtx.moveTo(x, 0);
+                gameCtx.lineTo(x, gameCanvas.height);
+                gameCtx.stroke();
+            }
+            
+            // 水平線
+            for (let y = 0; y < gameCanvas.height; y += 50) {
+                gameCtx.beginPath();
+                gameCtx.moveTo(0, y);
+                gameCtx.lineTo(gameCanvas.width, y);
+                gameCtx.stroke();
+            }
+            
+            // 中心圓圈
+            gameCtx.strokeStyle = 'rgba(0, 150, 255, 0.3)';
+            gameCtx.lineWidth = 2;
+            gameCtx.beginPath();
+            gameCtx.arc(gameCanvas.width / 2, gameCanvas.height / 2, 100, 0, Math.PI * 2);
+            gameCtx.stroke();
+            
+            // 攻擊區域標記
+            gameCtx.strokeStyle = 'rgba(255, 0, 0, 0.2)';
+            gameCtx.beginPath();
+            gameCtx.arc(gameCanvas.width * 0.2, gameCanvas.height / 2, 60, 0, Math.PI * 2);
+            gameCtx.stroke();
+            
+            gameCtx.strokeStyle = 'rgba(0, 0, 255, 0.2)';
+            gameCtx.beginPath();
+            gameCtx.arc(gameCanvas.width * 0.8, gameCanvas.height / 2, 60, 0, Math.PI * 2);
+            gameCtx.stroke();
+            
+            gameCtx.strokeStyle = 'rgba(255, 255, 0, 0.2)';
+            gameCtx.beginPath();
+            gameCtx.arc(gameCanvas.width / 2, gameCanvas.height / 2, 100, 0, Math.PI * 2);
+            gameCtx.stroke();
+        }
+        
+        // 暫停/繼續遊戲
+        function togglePause() {
+            if (!gameActive || gameOver) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                pauseBtn.textContent = '繼續';
+            } else {
+                pauseBtn.textContent = '暫停';
+            }
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            gameActive = false;
+            gameOver = true;
+            
+            clearInterval(gameLoopId);
+            
+            // 更新最高分
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.textContent = highScore;
+                localStorage.setItem('motionNinjaHighScore', highScore);
+                
+                hitDisplay.textContent = '新紀錄！';
+                hitDisplay.className = 'hit-display perfect';
+                hitDisplay.style.opacity = '1';
+            } else {
+                hitDisplay.textContent = '遊戲結束！';
+                hitDisplay.className = 'hit-display';
+                hitDisplay.style.opacity = '1';
+            }
+            
+            pauseBtn.disabled = true;
+            
+            // 顯示最終結果
+            setTimeout(() => {
+                alert(`遊戲結束！\n最終分數: ${score}\n最高連擊: ${maxCombo}\n準確率: ${accuracy}%\n擊中目標: ${hits}/${totalTargets}\n\n點擊"重新開始"再次挑戰！`);
+            }, 1000);
+        }
+        
+        // 重置遊戲狀態
+        function resetGameState() {
+            // 清除所有目標和粒子
+            targets = [];
+            particles = [];
+            
+            // 重置遊戲數據
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            hits = 0;
+            totalTargets = 0;
+            accuracy = 100;
+            
+            currentScoreElement.textContent = score;
+            comboCountElement.textContent = combo;
+            accuracyElement.textContent = `${accuracy}%`;
+            gameProgressElement.style.width = '0%';
+            gameTimeElement.textContent = '時間: 00:00';
+            updateTargetCount();
+            
+            hitDisplay.style.opacity = '0';
+            comboDisplay.style.opacity = '0';
+        }
+        
+        // 重置遊戲
+        function resetGame() {
+            clearInterval(gameLoopId);
+            
+            resetGameState();
+            
+            gameActive = false;
+            gamePaused = false;
+            gameOver = false;
+            
+            startBtn.textContent = '開始遊戲';
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = '暫停';
+            
+            currentDifficultyElement.textContent = '難度: 簡單';
+            
+            hitDisplay.textContent = '';
+            comboDisplay.textContent = '';
+        }
+        
+        // 更新控制模式
+        function updateControlMode() {
+            controlMode = controlModeSelect.value;
+            
+            if (controlMode === 'camera') {
+                if (!cameraActive) {
+                    startCamera();
+                }
+                calibrateBtn.disabled = !cameraActive;
+            } else {
+                calibrateBtn.disabled = true;
+            }
+        }
+        
+        // 切換攝像頭
+        function toggleCamera() {
+            if (cameraActive) {
+                stopCamera();
+            } else {
+                startCamera();
+            }
+        }
+        
+        // 獲取難度文字
+        function getDifficultyText(difficulty) {
+            switch(difficulty) {
+                case 'easy': return '簡單';
+                case 'normal': return '普通';
+                case 'hard': return '困難';
+                case 'expert': return '專家';
+                default: return difficulty;
+            }
+        }
+        
+        // 事件監聽器
+        startBtn.addEventListener('click', startGame);
+        
+        pauseBtn.addEventListener('click', togglePause);
+        
+        restartBtn.addEventListener('click', resetGame);
+        
+        calibrateBtn.addEventListener('click', calibrateCamera);
+        
+        toggleCameraBtn.addEventListener('click', toggleCamera);
+        
+        controlModeSelect.addEventListener('change', updateControlMode);
+        
+        // 難度選擇
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // 更新按鈕狀態
+                difficultyButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // 更新難度
+                currentDifficulty = button.getAttribute('data-difficulty');
+                
+                // 如果遊戲未進行中，更新顯示
+                if (!gameActive) {
+                    currentDifficultyElement.textContent = `難度: ${getDifficultyText(currentDifficulty)}`;
+                }
+            });
+        });
+        
+        // 鍵盤控制
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive || controlMode !== 'keyboard') return;
+            
+            // 防止默認行為
+            if ([37, 38, 39, 40, 32, 80, 27].includes(e.keyCode)) {
+                e.preventDefault();
+            }
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    triggerLeftAttack();
+                    break;
+                    
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    triggerRightAttack();
+                    break;
+                    
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    triggerJumpAttack();
+                    break;
+                    
+                case ' ':
+                    triggerJumpAttack();
+                    break;
+                    
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+                    
+                case 'Escape':
+                    resetGame();
+                    break;
+            }
+        });
+        
+        // 窗口大小變化處理
+        window.addEventListener('resize', () => {
+            initGameCanvas();
+            initCameraCanvas();
+            if (gameActive) {
+                gameLoop();
+            }
+        });
+        
+        // 初始化遊戲
+        function initGame() {
+            // 設置畫布大小
+            initGameCanvas();
+            initCameraCanvas();
+            
+            // 初始化遊戲
+            resetGame();
+            
+            // 初始繪製背景
+            drawBackground();
+            
+            // 嘗試啟動攝像頭
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                cameraStatus.textContent = '點擊"開啟攝像頭"啟動動作捕捉';
+            } else {
+                cameraStatus.textContent = '瀏覽器不支持攝像頭功能';
+                cameraStatus.style.color = '#ff4444';
+                controlModeSelect.value = 'keyboard';
+                controlMode = 'keyboard';
+                toggleCameraBtn.disabled = true;
+            }
+        }
+        
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>體感運動遊戲</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #fff;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        h1 {
+            font-size: 3.2rem;
+            color: #ff9a00;
+            text-shadow: 0 0 15px rgba(255, 154, 0, 0.7);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            color: #ffeb3b;
+            margin-bottom: 15px;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 30px;
+        }
+        
+        .game-area {
+            flex: 2;
+            min-width: 700px;
+            position: relative;
+        }
+        
+        #gameCanvas {
+            border: 5px solid #ff9a00;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #141e30 0%, #243b55 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            width: 100%;
+            height: 500px;
+        }
+        
+        .controls-panel {
+            flex: 1;
+            min-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .control-box {
+            background: rgba(30, 30, 46, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #ff9a00;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .box-title {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #ffeb3b;
+            text-align: center;
+            border-bottom: 2px solid #ff9a00;
+            padding-bottom: 8px;
+        }
+        
+        .difficulty-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .difficulty-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            border-radius: 8px;
+            background-color: #374151;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        
+        .difficulty-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .difficulty-btn.active {
+            box-shadow: 0 0 15px rgba(255, 154, 0, 0.8);
+            border: 2px solid #ff9a00;
+        }
+        
+        .easy { background-color: #4caf50; }
+        .medium { background-color: #ff9800; }
+        .hard { background-color: #f44336; }
+        
+        .game-mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .mode-btn {
+            padding: 15px 5px;
+            border: none;
+            border-radius: 8px;
+            background-color: #374151;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .mode-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .mode-btn.active {
+            box-shadow: 0 0 15px rgba(255, 154, 0, 0.8);
+            border: 2px solid #ff9a00;
+        }
+        
+        .mode-icon {
+            font-size: 1.5rem;
+        }
+        
+        .jumping { background-color: #2196f3; }
+        .squatting { background-color: #9c27b0; }
+        .punching { background-color: #f44336; }
+        .running { background-color: #4caf50; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(55, 65, 81, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border-left: 4px solid #ff9a00;
+        }
+        
+        .stat-label {
+            color: #d1d5db;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #ffeb3b;
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        
+        .game-btn {
+            padding: 15px 10px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #ff9a00, #ff6f00);
+            color: white;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(255, 154, 0, 0.4);
+            background: linear-gradient(to bottom, #ffb347, #ff9a00);
+        }
+        
+        .game-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .game-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-start { background: linear-gradient(to bottom, #4caf50, #2e7d32); }
+        .btn-start:hover { background: linear-gradient(to bottom, #66bb6a, #4caf50); }
+        
+        .btn-pause { background: linear-gradient(to bottom, #2196f3, #0d47a1); }
+        .btn-pause:hover { background: linear-gradient(to bottom, #42a5f5, #2196f3); }
+        
+        .sensor-section {
+            background: rgba(255, 154, 0, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #ff9a00;
+        }
+        
+        .sensor-title {
+            color: #ffeb3b;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .sensor-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .sensor-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #6b7280;
+        }
+        
+        .sensor-indicator.active {
+            background-color: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+        
+        .sensor-data {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .sensor-axis {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .axis-label {
+            color: #ffeb3b;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .axis-value {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            max-width: 1200px;
+            background: rgba(30, 30, 46, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #ff9a00;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            margin-top: 10px;
+        }
+        
+        .instructions h3 {
+            color: #ffeb3b;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.6rem;
+        }
+        
+        .instructions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .instruction-section {
+            background: rgba(55, 65, 81, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .instruction-section h4 {
+            color: #ffeb3b;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 154, 0, 0.5);
+            padding-bottom: 5px;
+        }
+        
+        .instruction-section ul {
+            padding-left: 20px;
+            color: #d1d5db;
+        }
+        
+        .instruction-section li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .highlight {
+            color: #ff9a00;
+            font-weight: bold;
+        }
+        
+        .workout-summary {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .summary-content {
+            background: linear-gradient(to bottom, #141e30, #243b55);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 700px;
+            width: 90%;
+            border: 5px solid #ff9a00;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+        }
+        
+        .summary-title {
+            color: #ffeb3b;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 25px 0;
+        }
+        
+        .summary-stat {
+            background: rgba(255, 154, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #ff9a00;
+        }
+        
+        .summary-value {
+            font-size: 2.5rem;
+            color: #ffeb3b;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .summary-label {
+            color: #d1d5db;
+            font-size: 1rem;
+        }
+        
+        .new-record {
+            color: #ff9800;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 20px 0;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .exercise-guide {
+            background: rgba(255, 154, 0, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            border: 1px solid #ff9a00;
+        }
+        
+        .guide-title {
+            color: #ffeb3b;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .guide-text {
+            color: #d1d5db;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        
+        .motion-visualizer {
+            margin-top: 20px;
+            height: 100px;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .motion-bar {
+            position: absolute;
+            bottom: 0;
+            width: 30%;
+            height: 0;
+            background: linear-gradient(to top, #ff9a00, #ffeb3b);
+            border-radius: 5px 5px 0 0;
+            transition: height 0.1s;
+        }
+        
+        #motion-x { left: 5%; }
+        #motion-y { left: 37.5%; }
+        #motion-z { left: 70%; }
+        
+        .motion-label {
+            position: absolute;
+            bottom: -25px;
+            color: #ffeb3b;
+            font-size: 0.9rem;
+            text-align: center;
+            width: 30%;
+        }
+        
+        #motion-label-x { left: 5%; }
+        #motion-label-y { left: 37.5%; }
+        #motion-label-z { left: 70%; }
+        
+        @media (max-width: 1100px) {
+            .game-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .game-area, .controls-panel {
+                min-width: 100%;
+                max-width: 100%;
+            }
+            
+            #gameCanvas {
+                height: 400px;
+            }
+        }
+        
+        @media (max-width: 750px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-area {
+                min-width: 100%;
+            }
+            
+            #gameCanvas {
+                height: 350px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-mode-selector {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <h1><i class="fas fa-running"></i> 體感運動遊戲</h1>
+        <div class="tagline">動起來！用身體控制遊戲，健身又有趣</div>
+    </div>
+    
+    <div class="game-container">
+        <div class="game-area">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+        </div>
+        
+        <div class="controls-panel">
+            <div class="control-box">
+                <div class="box-title">遊戲設定</div>
+                <div class="difficulty-selector">
+                    <button class="difficulty-btn easy active" data-difficulty="easy">簡單</button>
+                    <button class="difficulty-btn medium" data-difficulty="medium">中等</button>
+                    <button class="difficulty-btn hard" data-difficulty="hard">困難</button>
+                </div>
+                
+                <div class="game-mode-selector">
+                    <button class="mode-btn jumping active" data-mode="jumping">
+                        <i class="fas fa-arrow-up mode-icon"></i>
+                        <span>跳躍模式</span>
+                    </button>
+                    <button class="mode-btn squatting" data-mode="squatting">
+                        <i class="fas fa-arrow-down mode-icon"></i>
+                        <span>深蹲模式</span>
+                    </button>
+                    <button class="mode-btn punching" data-mode="punching">
+                        <i class="fas fa-fist-raised mode-icon"></i>
+                        <span>拳擊模式</span>
+                    </button>
+                    <button class="mode-btn running" data-mode="running">
+                        <i class="fas fa-running mode-icon"></i>
+                        <span>跑步模式</span>
+                    </button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">分數</div>
+                        <div class="stat-value" id="score">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">時間</div>
+                        <div class="stat-value" id="time">60s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">卡路里</div>
+                        <div class="stat-value" id="calories">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">最高分</div>
+                        <div class="stat-value" id="high-score">0</div>
+                    </div>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="game-btn btn-start" id="start-btn">
+                        <i class="fas fa-play"></i> 開始運動
+                    </button>
+                    <button class="game-btn btn-pause" id="pause-btn" disabled>
+                        <i class="fas fa-pause"></i> 暫停
+                    </button>
+                </div>
+                
+                <div class="exercise-guide">
+                    <div class="guide-title" id="exercise-title">跳躍運動</div>
+                    <div class="guide-text" id="exercise-description">
+                        上下移動您的裝置來跳躍，躲避障礙物！
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-box">
+                <div class="box-title">體感控制</div>
+                <div class="sensor-section">
+                    <div class="sensor-title">動作感應器</div>
+                    <div class="sensor-status">
+                        <div class="sensor-indicator" id="sensor-indicator"></div>
+                        <span id="sensor-status-text">點擊啟用</span>
+                        <button class="game-btn" id="enable-sensor-btn" style="padding: 8px 12px; font-size: 0.9rem;">
+                            啟用感應器
+                        </button>
+                    </div>
+                    
+                    <div class="motion-visualizer">
+                        <div class="motion-bar" id="motion-x"></div>
+                        <div class="motion-bar" id="motion-y"></div>
+                        <div class="motion-bar" id="motion-z"></div>
+                        <div class="motion-label" id="motion-label-x">X軸</div>
+                        <div class="motion-label" id="motion-label-y">Y軸</div>
+                        <div class="motion-label" id="motion-label-z">Z軸</div>
+                    </div>
+                    
+                    <div class="sensor-data">
+                        <div class="sensor-axis">
+                            <div class="axis-label">X軸 (左右)</div>
+                            <div class="axis-value" id="x-value">0.00</div>
+                        </div>
+                        <div class="sensor-axis">
+                            <div class="axis-label">Y軸 (上下)</div>
+                            <div class="axis-value" id="y-value">0.00</div>
+                        </div>
+                        <div class="sensor-axis">
+                            <div class="axis-label">Z軸 (前後)</div>
+                            <div class="axis-value" id="z-value">0.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; text-align: center; color: #ffeb3b;">
+                    <p>提示: 根據不同運動模式，做出相應的身體動作！</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>遊戲說明</h3>
+        <div class="instructions-grid">
+            <div class="instruction-section">
+                <h4>遊戲目標</h4>
+                <ul>
+                    <li>使用體感控制完成各種運動挑戰</li>
+                    <li>在時間內獲得最高分數</li>
+                    <li>每種運動模式有不同的挑戰方式</li>
+                    <li>燃燒卡路里，達到健身效果</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-section">
+                <h4>運動模式</h4>
+                <ul>
+                    <li><span class="highlight">跳躍模式</span>: 上下移動裝置跳躍</li>
+                    <li><span class="highlight">深蹲模式</span>: 前後傾斜裝置深蹲</li>
+                    <li><span class="highlight">拳擊模式</span>: 左右擺動裝置出拳</li>
+                    <li><span class="highlight">跑步模式</span>: 上下抖動裝置跑步</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-section">
+                <h4>控制方式</h4>
+                <ul>
+                    <li>啟用裝置的動作感應器</li>
+                    <li>根據指示做出相應身體動作</li>
+                    <li>電腦版可使用鍵盤控制 (方向鍵)</li>
+                    <li>手機版使用體感控制最佳</li>
+                </ul>
+            </div>
+            
+            <div class="instruction-section">
+                <h4>計分方式</h4>
+                <ul>
+                    <li>成功完成動作: +10分</li>
+                    <li>連續成功: 額外獎勵分數</li>
+                    <li>卡路里計算: 根據動作強度</li>
+                    <li>時間獎勵: 剩餘時間轉換分數</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="workout-summary" id="workout-summary">
+        <div class="summary-content">
+            <h2 class="summary-title">運動完成！</h2>
+            <div class="summary-stats">
+                <div class="summary-stat">
+                    <div class="summary-value" id="final-score">0</div>
+                    <div class="summary-label">最終分數</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-value" id="final-calories">0</div>
+                    <div class="summary-label">卡路里消耗</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-value" id="exercise-count">0</div>
+                    <div class="summary-label">運動次數</div>
+                </div>
+                <div class="summary-stat">
+                    <div class="summary-value" id="workout-time">0s</div>
+                    <div class="summary-label">運動時間</div>
+                </div>
+            </div>
+            
+            <div class="new-record" id="new-record" style="display:none">新最高分紀錄！</div>
+            
+            <button class="game-btn btn-start" id="play-again-btn">
+                <i class="fas fa-redo"></i> 再運動一次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲變數
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const timeElement = document.getElementById('time');
+        const caloriesElement = document.getElementById('calories');
+        const highScoreElement = document.getElementById('high-score');
+        const startButton = document.getElementById('start-btn');
+        const pauseButton = document.getElementById('pause-btn');
+        const workoutSummary = document.getElementById('workout-summary');
+        const playAgainButton = document.getElementById('play-again-btn');
+        const difficultyButtons = document.querySelectorAll('.difficulty-btn');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const enableSensorButton = document.getElementById('enable-sensor-btn');
+        const sensorIndicator = document.getElementById('sensor-indicator');
+        const sensorStatusText = document.getElementById('sensor-status-text');
+        
+        // 感應器數據顯示元素
+        const xValueElement = document.getElementById('x-value');
+        const yValueElement = document.getElementById('y-value');
+        const zValueElement = document.getElementById('z-value');
+        const motionXBar = document.getElementById('motion-x');
+        const motionYBar = document.getElementById('motion-y');
+        const motionZBar = document.getElementById('motion-z');
+        const exerciseTitle = document.getElementById('exercise-title');
+        const exerciseDescription = document.getElementById('exercise-description');
+        
+        // 遊戲狀態
+        let game = {
+            running: false,
+            paused: false,
+            score: 0,
+            timeLeft: 60,
+            calories: 0,
+            highScore: localStorage.getItem('motionFitnessHighScore') || 0,
+            difficulty: 'easy',
+            gameMode: 'jumping',
+            player: null,
+            obstacles: [],
+            targets: [],
+            exerciseCount: 0,
+            lastExerciseTime: 0,
+            exerciseCooldown: 800, // 毫秒
+            gameTime: 0,
+            motionSensorEnabled: false,
+            motionData: { x: 0, y: 0, z: 0 },
+            thresholds: {
+                jumping: 15,
+                squatting: 12,
+                punching: 10,
+                running: 8
+            },
+            sensorListeners: [],
+            keyboardMode: false
+        };
+        
+        // 難度設置
+        const difficultySettings = {
+            easy: {
+                time: 90,
+                obstacleSpeed: 2.0,
+                spawnRate: 100, // 幀數
+                calorieMultiplier: 1.0,
+                scoreMultiplier: 1.0,
+                thresholdMultiplier: 0.8
+            },
+            medium: {
+                time: 75,
+                obstacleSpeed: 2.5,
+                spawnRate: 80,
+                calorieMultiplier: 1.3,
+                scoreMultiplier: 1.5,
+                thresholdMultiplier: 1.0
+            },
+            hard: {
+                time: 60,
+                obstacleSpeed: 3.2,
+                spawnRate: 60,
+                calorieMultiplier: 1.8,
+                scoreMultiplier: 2.0,
+                thresholdMultiplier: 1.2
+            }
+        };
+        
+        // 運動模式設置
+        const exerciseSettings = {
+            jumping: {
+                title: '跳躍運動',
+                description: '上下移動您的裝置來跳躍，躲避障礙物！',
+                axis: 'y',
+                direction: 'up',
+                caloriePerAction: 0.5,
+                baseScore: 10,
+                color: '#2196f3'
+            },
+            squatting: {
+                title: '深蹲運動',
+                description: '前後傾斜您的裝置來模擬深蹲動作！',
+                axis: 'z',
+                direction: 'forward',
+                caloriePerAction: 0.7,
+                baseScore: 12,
+                color: '#9c27b0'
+            },
+            punching: {
+                title: '拳擊運動',
+                description: '左右擺動您的裝置來模擬出拳動作！',
+                axis: 'x',
+                direction: 'left',
+                caloriePerAction: 0.4,
+                baseScore: 8,
+                color: '#f44336'
+            },
+            running: {
+                title: '跑步運動',
+                description: '上下抖動您的裝置來模擬跑步動作！',
+                axis: 'y',
+                direction: 'shake',
+                caloriePerAction: 0.6,
+                baseScore: 9,
+                color: '#4caf50'
+            }
+        };
+        
+        // 玩家類別
+        class Player {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height - 100;
+                this.width = 60;
+                this.height = 80;
+                this.color = '#ff9a00';
+                this.jumping = false;
+                this.jumpHeight = 0;
+                this.maxJumpHeight = 150;
+                this.jumpSpeed = 8;
+                this.squatting = false;
+                this.squatHeight = 0;
+                this.maxSquatHeight = 40;
+                this.punching = false;
+                this.punchDirection = 'left';
+                this.punchFrame = 0;
+                this.running = false;
+                this.runFrame = 0;
+                this.health = 100;
+            }
+            
+            draw() {
+                // 根據運動模式繪製不同角色
+                ctx.save();
+                
+                // 應用轉換
+                if (this.squatting) {
+                    ctx.translate(0, this.squatHeight);
+                }
+                
+                // 繪製身體
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
+                
+                // 繪製頭部
+                ctx.fillStyle = '#ffcccb';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y - this.height/2 - 10, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 根據運動模式繪製動作
+                this.drawAction();
+                
+                // 繪製健康條
+                this.drawHealthBar();
+                
+                ctx.restore();
+            }
+            
+            drawAction() {
+                // 根據當前運動模式繪製相應動作
+                switch(game.gameMode) {
+                    case 'jumping':
+                        if (this.jumping) {
+                            // 跳躍動作
+                            ctx.fillStyle = '#2196f3';
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y - this.height/2 - 30, 15, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                        
+                    case 'squatting':
+                        if (this.squatting) {
+                            // 深蹲動作 - 繪製彎曲腿部
+                            ctx.fillStyle = '#9c27b0';
+                            ctx.fillRect(this.x - this.width/2, this.y + this.height/2 - 20, this.width, 10);
+                        }
+                        break;
+                        
+                    case 'punching':
+                        if (this.punching) {
+                            // 拳擊動作
+                            ctx.fillStyle = '#f44336';
+                            const punchX = this.punchDirection === 'left' ? this.x - 50 : this.x + 50;
+                            ctx.beginPath();
+                            ctx.arc(punchX, this.y, 25, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        break;
+                        
+                    case 'running':
+                        if (this.running) {
+                            // 跑步動作 - 繪製擺動手臂
+                            ctx.fillStyle = '#4caf50';
+                            const armY = this.y - 10 + Math.sin(this.runFrame * 0.5) * 10;
+                            ctx.fillRect(this.x - 40, armY, 30, 10);
+                            ctx.fillRect(this.x + 10, armY + 20, 30, 10);
+                        }
+                        break;
+                }
+            }
+            
+            drawHealthBar() {
+                const barWidth = 80;
+                const barHeight = 10;
+                const barX = this.x - barWidth/2;
+                const barY = this.y - this.height/2 - 40;
+                
+                // 背景
+                ctx.fillStyle = '#444';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                
+                // 血量
+                ctx.fillStyle = this.health > 50 ? '#4caf50' : this.health > 25 ? '#ff9800' : '#f44336';
+                ctx.fillRect(barX, barY, barWidth * (this.health / 100), barHeight);
+                
+                // 邊框
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+            }
+            
+            update() {
+                // 更新跳躍狀態
+                if (this.jumping) {
+                    this.jumpHeight += this.jumpSpeed;
+                    if (this.jumpHeight >= this.maxJumpHeight) {
+                        this.jumpHeight = this.maxJumpHeight;
+                        this.jumpSpeed *= -1;
+                    }
+                    
+                    if (this.jumpHeight <= 0) {
+                        this.jumpHeight = 0;
+                        this.jumping = false;
+                        this.jumpSpeed = Math.abs(this.jumpSpeed);
+                    }
+                }
+                
+                // 更新深蹲狀態
+                if (this.squatting) {
+                    this.squatHeight = this.maxSquatHeight;
+                } else {
+                    this.squatHeight = Math.max(0, this.squatHeight - 5);
+                }
+                
+                // 更新拳擊狀態
+                if (this.punching) {
+                    this.punchFrame++;
+                    if (this.punchFrame > 10) {
+                        this.punching = false;
+                        this.punchFrame = 0;
+                    }
+                }
+                
+                // 更新跑步狀態
+                if (this.running) {
+                    this.runFrame++;
+                }
+            }
+            
+            jump() {
+                if (!this.jumping) {
+                    this.jumping = true;
+                    this.jumpHeight = 0;
+                    this.jumpSpeed = Math.abs(this.jumpSpeed);
+                }
+            }
+            
+            squat() {
+                this.squatting = true;
+            }
+            
+            releaseSquat() {
+                this.squatting = false;
+            }
+            
+            punch(direction) {
+                if (!this.punching) {
+                    this.punching = true;
+                    this.punchDirection = direction;
+                    this.punchFrame = 0;
+                }
+            }
+            
+            run() {
+                this.running = true;
+            }
+            
+            stopRun() {
+                this.running = false;
+            }
+            
+            isJumping() {
+                return this.jumping && this.jumpHeight > 20;
+            }
+            
+            isSquatting() {
+                return this.squatting && this.squatHeight > 20;
+            }
+            
+            isPunching() {
+                return this.punching && this.punchFrame < 8;
+            }
+            
+            isRunning() {
+                return this.running;
+            }
+        }
+        
+        // 障礙物類別
+        class Obstacle {
+            constructor(type) {
+                this.type = type; // 'high', 'low', 'middle'
+                this.width = 40;
+                this.height = this.getHeightByType();
+                this.x = canvas.width;
+                this.y = this.getYByType();
+                this.speed = difficultySettings[game.difficulty].obstacleSpeed;
+                this.color = this.getColorByType();
+            }
+            
+            getHeightByType() {
+                switch(this.type) {
+                    case 'high': return 60;
+                    case 'low': return 120;
+                    case 'middle': return 90;
+                    default: return 80;
+                }
+            }
+            
+            getYByType() {
+                switch(this.type) {
+                    case 'high': return canvas.height - 80;
+                    case 'low': return canvas.height - 40;
+                    case 'middle': return canvas.height - 60;
+                    default: return canvas.height - 60;
+                }
+            }
+            
+            getColorByType() {
+                switch(this.type) {
+                    case 'high': return '#f44336';
+                    case 'low': return '#2196f3';
+                    case 'middle': return '#ff9800';
+                    default: return '#4caf50';
+                }
+            }
+            
+            draw() {
+                // 繪製障礙物
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // 繪製細節
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                for (let i = 0; i < 3; i++) {
+                    const stripeX = this.x + i * 10;
+                    ctx.fillRect(stripeX, this.y, 5, this.height);
+                }
+            }
+            
+            update() {
+                this.x -= this.speed;
+                
+                // 檢查是否與玩家碰撞
+                if (this.checkCollision(game.player)) {
+                    // 根據障礙物類型和玩家動作處理碰撞
+                    const collisionResult = this.handleCollision(game.player);
+                    
+                    if (collisionResult.hit) {
+                        // 玩家被擊中
+                        game.player.health -= collisionResult.damage;
+                        
+                        // 從陣列中移除障礙物
+                        return true;
+                    }
+                }
+                
+                // 檢查是否離開畫面
+                if (this.x + this.width < 0) {
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            checkCollision(player) {
+                // 簡單的矩形碰撞檢測
+                const playerRight = player.x + player.width/2;
+                const playerLeft = player.x - player.width/2;
+                const playerBottom = player.y + player.height/2;
+                const playerTop = player.y - player.height/2;
+                
+                const obstacleRight = this.x + this.width;
+                const obstacleLeft = this.x;
+                const obstacleBottom = this.y + this.height;
+                const obstacleTop = this.y;
+                
+                return playerLeft < obstacleRight &&
+                       playerRight > obstacleLeft &&
+                       playerTop < obstacleBottom &&
+                       playerBottom > obstacleTop;
+            }
+            
+            handleCollision(player) {
+                // 根據運動模式和障礙物類型處理碰撞
+                let hit = true;
+                let damage = 10;
+                
+                switch(game.gameMode) {
+                    case 'jumping':
+                        // 跳躍模式下，高障礙物需要跳躍躲避
+                        if (this.type === 'high' && player.isJumping()) {
+                            hit = false;
+                        } else if (this.type === 'low' && !player.isJumping()) {
+                            hit = false;
+                        } else if (this.type === 'middle' && (player.isJumping() || player.isSquatting())) {
+                            hit = false;
+                        }
+                        break;
+                        
+                    case 'squatting':
+                        // 深蹲模式下，低障礙物需要深蹲躲避
+                        if (this.type === 'low' && player.isSquatting()) {
+                            hit = false;
+                        } else if (this.type === 'high' && !player.isSquatting()) {
+                            hit = false;
+                        } else if (this.type === 'middle' && player.isSquatting()) {
+                            hit = false;
+                        }
+                        break;
+                        
+                    case 'punching':
+                        // 拳擊模式下，可以擊碎障礙物
+                        if (player.isPunching()) {
+                            hit = false;
+                            // 擊碎障礙物，獲得額外分數
+                            game.score += 5;
+                        }
+                        break;
+                        
+                    case 'running':
+                        // 跑步模式下，所有障礙物都需要跳躍或深蹲
+                        if ((this.type === 'high' && player.isJumping()) ||
+                            (this.type === 'low' && player.isSquatting()) ||
+                            (this.type === 'middle' && (player.isJumping() || player.isSquatting()))) {
+                            hit = false;
+                        }
+                        break;
+                }
+                
+                return { hit, damage };
+            }
+        }
+        
+        // 目標類別（需要擊中的物體）
+        class Target {
+            constructor() {
+                this.size = 30;
+                this.x = canvas.width;
+                this.y = Math.random() * (canvas.height - 150) + 75;
+                this.speed = difficultySettings[game.difficulty].obstacleSpeed * 0.8;
+                this.color = '#ffeb3b';
+                this.type = Math.random() > 0.7 ? 'bonus' : 'normal';
+            }
+            
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 繪製目標細節
+                ctx.fillStyle = this.type === 'bonus' ? '#ff9800' : '#4caf50';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.type === 'bonus' ? '★' : '○', this.x, this.y);
+            }
+            
+            update() {
+                this.x -= this.speed;
+                
+                // 檢查是否與玩家碰撞
+                if (this.checkCollision(game.player)) {
+                    // 玩家擊中目標
+                    const score = this.type === 'bonus' ? 25 : 15;
+                    game.score += score;
+                    game.exerciseCount++;
+                    
+                    // 更新卡路里消耗
+                    const settings = difficultySettings[game.difficulty];
+                    const exercise = exerciseSettings[game.gameMode];
+                    game.calories += exercise.caloriePerAction * settings.calorieMultiplier;
+                    
+                    // 從陣列中移除目標
+                    return true;
+                }
+                
+                // 檢查是否離開畫面
+                if (this.x + this.size < 0) {
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            checkCollision(player) {
+                // 簡單的圓形碰撞檢測
+                const dx = this.x - player.x;
+                const dy = this.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 根據運動模式檢查碰撞
+                switch(game.gameMode) {
+                    case 'punching':
+                        // 拳擊模式下，需要出拳擊中目標
+                        if (player.isPunching() && distance < this.size + 30) {
+                            return true;
+                        }
+                        break;
+                        
+                    default:
+                        // 其他模式下，玩家接觸目標即可
+                        if (distance < this.size + player.width/2) {
+                            return true;
+                        }
+                        break;
+                }
+                
+                return false;
+            }
+        }
+        
+        // 初始化遊戲
+        function initGame() {
+            // 重置遊戲狀態
+            game.running = false;
+            game.paused = false;
+            game.score = 0;
+            game.calories = 0;
+            game.exerciseCount = 0;
+            game.lastExerciseTime = 0;
+            game.gameTime = 0;
+            
+            // 根據難度設置時間
+            const settings = difficultySettings[game.difficulty];
+            game.timeLeft = settings.time;
+            
+            // 初始化玩家
+            game.player = new Player();
+            
+            // 初始化障礙物和目標
+            game.obstacles = [];
+            game.targets = [];
+            
+            // 更新運動模式說明
+            updateExerciseGuide();
+            
+            // 更新UI
+            updateUI();
+            
+            // 繪製初始畫面
+            draw();
+            
+            // 啟用/禁用按鈕
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            
+            // 隱藏健身總結
+            workoutSummary.style.display = 'none';
+            
+            // 更新感應器狀態
+            updateSensorStatus();
+        }
+        
+        // 設置難度
+        function setDifficulty(difficulty) {
+            game.difficulty = difficulty;
+            
+            // 更新按鈕狀態
+            difficultyButtons.forEach(btn => {
+                if (btn.dataset.difficulty === difficulty) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 如果遊戲已開始，重新初始化
+            if (game.running) {
+                const settings = difficultySettings[game.difficulty];
+                game.timeLeft = settings.time;
+                updateUI();
+            } else {
+                initGame();
+            }
+        }
+        
+        // 設置運動模式
+        function setGameMode(mode) {
+            game.gameMode = mode;
+            
+            // 更新按鈕狀態
+            modeButtons.forEach(btn => {
+                if (btn.dataset.mode === mode) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 更新運動模式說明
+            updateExerciseGuide();
+            
+            // 重新初始化遊戲
+            if (game.running) {
+                game.obstacles = [];
+                game.targets = [];
+            }
+            
+            // 重新繪製
+            draw();
+        }
+        
+        // 更新運動模式說明
+        function updateExerciseGuide() {
+            const exercise = exerciseSettings[game.gameMode];
+            exerciseTitle.textContent = exercise.title;
+            exerciseDescription.textContent = exercise.description;
+        }
+        
+        // 開始遊戲
+        function startGame() {
+            if (game.running) return;
+            
+            game.running = true;
+            game.paused = false;
+            game.gameTime = Date.now();
+            
+            // 啟用/禁用按鈕
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            
+            // 開始遊戲循環
+            gameLoop();
+            
+            // 更新UI
+            updateUI();
+        }
+        
+        // 暫停/繼續遊戲
+        function togglePause() {
+            if (!game.running) return;
+            
+            game.paused = !game.paused;
+            
+            if (game.paused) {
+                pauseButton.innerHTML = '<i class="fas fa-play"></i> 繼續';
+            } else {
+                pauseButton.innerHTML = '<i class="fas fa-pause"></i> 暫停';
+                // 繼續遊戲循環
+                gameLoop();
+            }
+        }
+        
+        // 遊戲循環
+        function gameLoop() {
+            if (!game.running || game.paused) return;
+            
+            // 更新遊戲時間
+            const currentTime = Date.now();
+            const elapsedSeconds = Math.floor((currentTime - game.gameTime) / 1000);
+            game.timeLeft = difficultySettings[game.difficulty].time - elapsedSeconds;
+            
+            // 檢查遊戲是否結束
+            if (game.timeLeft <= 0 || game.player.health <= 0) {
+                endGame();
+                return;
+            }
+            
+            // 更新遊戲物件
+            update();
+            
+            // 繪製遊戲
+            draw();
+            
+            // 繼續遊戲循環
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // 更新遊戲狀態
+        function update() {
+            // 更新玩家
+            game.player.update();
+            
+            // 更新障礙物
+            for (let i = game.obstacles.length - 1; i >= 0; i--) {
+                const obstacle = game.obstacles[i];
+                const shouldRemove = obstacle.update();
+                
+                if (shouldRemove) {
+                    game.obstacles.splice(i, 1);
+                }
+            }
+            
+            // 更新目標
+            for (let i = game.targets.length - 1; i >= 0; i--) {
+                const target = game.targets[i];
+                const shouldRemove = target.update();
+                
+                if (shouldRemove) {
+                    game.targets.splice(i, 1);
+                }
+            }
+            
+            // 隨機生成障礙物
+            if (Math.random() * difficultySettings[game.difficulty].spawnRate < 1) {
+                const types = ['high', 'low', 'middle'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                game.obstacles.push(new Obstacle(type));
+            }
+            
+            // 隨機生成目標
+            if (Math.random() * (difficultySettings[game.difficulty].spawnRate * 1.5) < 1) {
+                game.targets.push(new Target());
+            }
+            
+            // 處理體感輸入
+            if (game.motionSensorEnabled) {
+                handleMotionInput();
+            }
+            
+            // 更新UI
+            updateUI();
+        }
+        
+        // 繪製遊戲
+        function draw() {
+            // 清除畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製背景
+            drawBackground();
+            
+            // 繪製障礙物
+            game.obstacles.forEach(obstacle => {
+                obstacle.draw();
+            });
+            
+            // 繪製目標
+            game.targets.forEach(target => {
+                target.draw();
+            });
+            
+            // 繪製玩家
+            game.player.draw();
+            
+            // 繪製遊戲信息
+            drawGameInfo();
+        }
+        
+        // 繪製背景
+        function drawBackground() {
+            // 漸變背景
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#141e30');
+            gradient.addColorStop(1, '#243b55');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製地面
+            ctx.fillStyle = 'rgba(255, 154, 0, 0.2)';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            
+            // 繪製跑道線
+            ctx.strokeStyle = '#ffeb3b';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 15);
+            ctx.lineTo(canvas.width, canvas.height - 15);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 繪製運動模式標示
+            const exercise = exerciseSettings[game.gameMode];
+            ctx.fillStyle = exercise.color;
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(exercise.title, canvas.width/2, 40);
+        }
+        
+        // 繪製遊戲信息
+        function drawGameInfo() {
+            // 繪製分數
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(`分數: ${game.score}`, 20, 30);
+            
+            // 繪製時間
+            ctx.fillStyle = '#4caf50';
+            ctx.fillText(`時間: ${game.timeLeft}s`, 20, 60);
+            
+            // 繪製卡路里
+            ctx.fillStyle = '#ff9800';
+            ctx.fillText(`卡路里: ${Math.round(game.calories)}`, 20, 90);
+            
+            // 繪製運動次數
+            ctx.fillStyle = '#2196f3';
+            ctx.fillText(`運動次數: ${game.exerciseCount}`, 20, 120);
+            
+            // 繪製難度
+            ctx.fillStyle = '#d1d5db';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'right';
+            const difficultyText = game.difficulty === 'easy' ? '簡單' : 
+                                 game.difficulty === 'medium' ? '中等' : '困難';
+            ctx.fillText(`難度: ${difficultyText}`, canvas.width - 20, 30);
+            
+            // 繪製健康值
+            ctx.fillStyle = game.player.health > 50 ? '#4caf50' : 
+                           game.player.health > 25 ? '#ff9800' : '#f44336';
+            ctx.fillText(`健康: ${game.player.health}%`, canvas.width - 20, 60);
+        }
+        
+        // 處理體感輸入
+        function handleMotionInput() {
+            const currentTime = Date.now();
+            if (currentTime - game.lastExerciseTime < game.exerciseCooldown) return;
+            
+            const exercise = exerciseSettings[game.gameMode];
+            const threshold = game.thresholds[game.gameMode] * difficultySettings[game.difficulty].thresholdMultiplier;
+            const motionValue = Math.abs(game.motionData[exercise.axis]);
+            
+            // 更新視覺化條形圖
+            updateMotionVisualizer();
+            
+            // 檢查是否達到動作閾值
+            if (motionValue > threshold) {
+                performExercise();
+                game.lastExerciseTime = currentTime;
+            }
+        }
+        
+        // 執行運動動作
+        function performExercise() {
+            const exercise = exerciseSettings[game.gameMode];
+            const settings = difficultySettings[game.difficulty];
+            
+            switch(game.gameMode) {
+                case 'jumping':
+                    game.player.jump();
+                    break;
+                    
+                case 'squatting':
+                    game.player.squat();
+                    // 延遲釋放深蹲
+                    setTimeout(() => {
+                        game.player.releaseSquat();
+                    }, 300);
+                    break;
+                    
+                case 'punching':
+                    const direction = game.motionData.x > 0 ? 'right' : 'left';
+                    game.player.punch(direction);
+                    break;
+                    
+                case 'running':
+                    game.player.run();
+                    // 延遲停止跑步
+                    setTimeout(() => {
+                        game.player.stopRun();
+                    }, 200);
+                    break;
+            }
+            
+            // 增加運動次數
+            game.exerciseCount++;
+            
+            // 增加分數
+            const baseScore = exercise.baseScore;
+            const multiplier = settings.scoreMultiplier;
+            game.score += Math.round(baseScore * multiplier);
+            
+            // 增加卡路里消耗
+            game.calories += exercise.caloriePerAction * settings.calorieMultiplier;
+            
+            // 視覺反饋
+            sensorIndicator.style.backgroundColor = '#f44336';
+            setTimeout(() => {
+                sensorIndicator.style.backgroundColor = '#4caf50';
+            }, 200);
+        }
+        
+        // 更新動作視覺化
+        function updateMotionVisualizer() {
+            // 計算條形圖高度 (0-100%)
+            const maxValue = 30;
+            const xHeight = Math.min(100, Math.abs(game.motionData.x) / maxValue * 100);
+            const yHeight = Math.min(100, Math.abs(game.motionData.y) / maxValue * 100);
+            const zHeight = Math.min(100, Math.abs(game.motionData.z) / maxValue * 100);
+            
+            motionXBar.style.height = `${xHeight}%`;
+            motionYBar.style.height = `${yHeight}%`;
+            motionZBar.style.height = `${zHeight}%`;
+            
+            // 更新數值顯示
+            xValueElement.textContent = game.motionData.x.toFixed(2);
+            yValueElement.textContent = game.motionData.y.toFixed(2);
+            zValueElement.textContent = game.motionData.z.toFixed(2);
+        }
+        
+        // 結束遊戲
+        function endGame() {
+            game.running = false;
+            
+            // 計算最終分數 (加上剩餘時間獎勵)
+            const timeBonus = Math.max(0, game.timeLeft) * 2;
+            const finalScore = game.score + timeBonus;
+            
+            // 檢查是否為新最高分
+            let newRecord = false;
+            if (finalScore > game.highScore) {
+                game.highScore = finalScore;
+                localStorage.setItem('motionFitnessHighScore', game.highScore);
+                newRecord = true;
+            }
+            
+            // 計算健身統計
+            const workoutTime = difficultySettings[game.difficulty].time - game.timeLeft;
+            
+            // 顯示健身總結
+            document.getElementById('final-score').textContent = finalScore;
+            document.getElementById('final-calories').textContent = Math.round(game.calories);
+            document.getElementById('exercise-count').textContent = game.exerciseCount;
+            document.getElementById('workout-time').textContent = `${workoutTime}s`;
+            
+            // 顯示新紀錄訊息
+            if (newRecord) {
+                document.getElementById('new-record').style.display = 'block';
+            } else {
+                document.getElementById('new-record').style.display = 'none';
+            }
+            
+            workoutSummary.style.display = 'flex';
+            
+            // 禁用按鈕
+            pauseButton.disabled = true;
+        }
+        
+        // 更新UI
+        function updateUI() {
+            scoreElement.textContent = game.score;
+            timeElement.textContent = `${game.timeLeft}s`;
+            caloriesElement.textContent = Math.round(game.calories);
+            highScoreElement.textContent = game.highScore;
+        }
+        
+        // 更新感應器狀態
+        function updateSensorStatus() {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+ 設備
+                sensorStatusText.textContent = '點擊啟用';
+                sensorIndicator.classList.remove('active');
+            } else if ('DeviceMotionEvent' in window) {
+                // 支援 DeviceMotion 的設備
+                sensorStatusText.textContent = '支援';
+                sensorIndicator.classList.add('active');
+                enableMotionSensor();
+            } else {
+                // 不支援 DeviceMotion
+                sensorStatusText.textContent = '不支援';
+                sensorIndicator.classList.remove('active');
+                game.motionSensorEnabled = false;
+                game.keyboardMode = true;
+            }
+        }
+        
+        // 啟用動作感應器
+        function enableMotionSensor() {
+            if (game.motionSensorEnabled) return;
+            
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                // iOS 13+ 需要請求權限
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            setupMotionSensor();
+                        } else {
+                            sensorStatusText.textContent = '已拒絕';
+                            sensorIndicator.classList.remove('active');
+                            game.keyboardMode = true;
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // 其他設備直接啟用
+                setupMotionSensor();
+            }
+        }
+        
+        // 設置動作感應器
+        function setupMotionSensor() {
+            if (game.motionSensorEnabled) return;
+            
+            window.addEventListener('devicemotion', handleDeviceMotion);
+            game.sensorListeners.push('devicemotion');
+            
+            sensorStatusText.textContent = '已啟用';
+            sensorIndicator.classList.add('active');
+            game.motionSensorEnabled = true;
+            game.keyboardMode = false;
+        }
+        
+        // 處理裝置動作事件
+        function handleDeviceMotion(event) {
+            if (!event.accelerationIncludingGravity) return;
+            
+            const acceleration = event.accelerationIncludingGravity;
+            
+            // 平滑處理加速度數據
+            const smoothingFactor = 0.3;
+            game.motionData.x = game.motionData.x * (1 - smoothingFactor) + acceleration.x * smoothingFactor;
+            game.motionData.y = game.motionData.y * (1 - smoothingFactor) + acceleration.y * smoothingFactor;
+            game.motionData.z = game.motionData.z * (1 - smoothingFactor) + acceleration.z * smoothingFactor;
+        }
+        
+        // 事件監聽器
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', togglePause);
+        playAgainButton.addEventListener('click', () => {
+            workoutSummary.style.display = 'none';
+            initGame();
+        });
+        
+        // 難度按鈕
+        difficultyButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setDifficulty(button.dataset.difficulty);
+            });
+        });
+        
+        // 運動模式按鈕
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                setGameMode(button.dataset.mode);
+            });
+        });
+        
+        // 感應器啟用按鈕
+        enableSensorButton.addEventListener('click', enableMotionSensor);
+        
+        // 鍵盤控制 (備用方案)
+        document.addEventListener('keydown', (e) => {
+            if (!game.running || game.paused) return;
+            
+            // 如果體感控制已啟用，優先使用體感控制
+            if (game.motionSensorEnabled && !game.keyboardMode) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    game.player.jump();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    game.player.squat();
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    game.player.punch('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    game.player.punch('right');
+                    break;
+                case ' ':
+                    // 空格鍵用於跑步模式
+                    if (game.gameMode === 'running') {
+                        game.player.run();
+                    }
+                    break;
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (!game.running || game.paused) return;
+            
+            // 如果體感控制已啟用，優先使用體感控制
+            if (game.motionSensorEnabled && !game.keyboardMode) return;
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    game.player.releaseSquat();
+                    break;
+                case ' ':
+                    if (game.gameMode === 'running') {
+                        game.player.stopRun();
+                    }
+                    break;
+            }
+        });
+        
+        // 初始化遊戲
+        window.onload = function() {
+            initGame();
+            updateSensorStatus();
+        };
+    </script>
+</body>
+</html>
