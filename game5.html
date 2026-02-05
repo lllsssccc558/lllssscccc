@@ -471,6 +471,10 @@
         let gamePaused = false;
         let gameOver = false;
         let difficulty = 'easy'; // 'easy', 'normal', 'hard'
+        let animationFrameId = null;
+        let lastUpdateTime = 0;
+        let gameSpeed = 0;
+        let activeTimeouts = []; // 追蹤活動的setTimeout
         
         // 根據難度設置遊戲參數
         const difficultySettings = {
@@ -478,6 +482,26 @@
             normal: { initialSpeed: 800, speedIncrement: 70, levelSpeedFactor: 0.85 },
             hard: { initialSpeed: 600, speedIncrement: 90, levelSpeedFactor: 0.8 }
         };
+        
+        // 清理所有活動的setTimeout
+        function cleanupTimeouts() {
+            activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+            activeTimeouts = [];
+        }
+        
+        // 安全的setTimeout，會自動追蹤和清理
+        function safeSetTimeout(callback, delay) {
+            const timeoutId = setTimeout(() => {
+                // 從活動列表中移除
+                const index = activeTimeouts.indexOf(timeoutId);
+                if (index > -1) {
+                    activeTimeouts.splice(index, 1);
+                }
+                callback();
+            }, delay);
+            activeTimeouts.push(timeoutId);
+            return timeoutId;
+        }
         
         // 方塊形狀定義
         const SHAPES = [
@@ -888,15 +912,9 @@
         // 更新遊戲速度
         function updateGameSpeed() {
             const settings = difficultySettings[difficulty];
-            clearInterval(gameInterval);
             
             // 計算新速度（隨等級增加而加快）
-            const speed = Math.max(100, settings.initialSpeed * Math.pow(settings.levelSpeedFactor, level - 1));
-            
-            // 設置新的遊戲間隔
-            if (gameActive && !gamePaused) {
-                gameInterval = setInterval(gameLoop, speed);
-            }
+            gameSpeed = Math.max(100, settings.initialSpeed * Math.pow(settings.levelSpeedFactor, level - 1));
         }
         
         // 移動方塊
@@ -929,22 +947,52 @@
             }
         }
         
-        // 遊戲主循環
-        function gameLoop() {
-            if (!gameActive || gamePaused || gameOver) return;
-            
-            // 移動方塊向下
-            if (!movePiece(1, 0)) {
-                // 如果無法向下移動，方塊已經被鎖定
+        // 遊戲主循環 (使用requestAnimationFrame)
+        function gameLoop(currentTime) {
+            if (!gameActive || gameOver) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
             }
             
-            // 繪製遊戲板
-            drawBoard();
+            if (gamePaused) {
+                // 如果遊戲暫停，繼續下一幀但不更新遊戲狀態
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            // 計算時間差，控制遊戲速度
+            if (lastUpdateTime === 0) {
+                lastUpdateTime = currentTime;
+            }
+            
+            const deltaTime = currentTime - lastUpdateTime;
+            
+            // 如果時間差足夠大，更新遊戲狀態
+            if (deltaTime >= gameSpeed) {
+                // 移動方塊向下
+                if (!movePiece(1, 0)) {
+                    // 如果無法向下移動，方塊已經被鎖定
+                }
+                
+                // 繪製遊戲板
+                drawBoard();
+                lastUpdateTime = currentTime - (deltaTime % gameSpeed); // 保留多餘時間
+            }
+            
+            // 繼續下一幀
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
         
         // 開始遊戲
         function startGame() {
             if (gameActive && !gamePaused) return;
+            
+            // 清理現有資源
+            cleanupTimeouts();
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
             
             initBoard();
             score = 0;
@@ -974,6 +1022,12 @@
             
             // 根據難度設置遊戲速度
             updateGameSpeed();
+            
+            // 重置時間追蹤
+            lastUpdateTime = 0;
+            
+            // 開始遊戲循環
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
         
         // 暫停/繼續遊戲
@@ -983,13 +1037,14 @@
             gamePaused = !gamePaused;
             
             if (gamePaused) {
-                clearInterval(gameInterval);
                 pauseBtn.textContent = '繼續';
                 statusText.textContent = '遊戲已暫停';
             } else {
-                updateGameSpeed();
                 pauseBtn.textContent = '暫停';
                 statusText.textContent = '遊戲進行中';
+                
+                // 重置時間追蹤以避免暫停後立即更新
+                lastUpdateTime = 0;
             }
         }
         
@@ -998,7 +1053,11 @@
             gameActive = false;
             gameOver = true;
             
-            clearInterval(gameInterval);
+            // 停止動畫幀
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
             
             statusText.textContent = `遊戲結束！最終分數: ${score}`;
             statusText.classList.add('game-over');
@@ -1008,7 +1067,12 @@
         
         // 重置遊戲
         function resetGame() {
-            clearInterval(gameInterval);
+            // 清理現有資源
+            cleanupTimeouts();
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
             
             gameActive = false;
             gamePaused = false;
@@ -1028,6 +1092,9 @@
             currentScoreElement.textContent = '0';
             currentLevelElement.textContent = '1';
             linesClearedElement.textContent = '0';
+            
+            // 重置時間追蹤
+            lastUpdateTime = 0;
         }
         
         // 事件監聽器
@@ -1104,12 +1171,74 @@
             }
         });
         
-        // 初始化遊戲
-        function initGame() {
-            // 設置canvas大小
-            function resizeCanvas() {
+        // 添加基本的可訪問性支援
+        function addAccessibilitySupport() {
+            // 為按鈕添加ARIA標籤
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (!button.getAttribute('aria-label')) {
+                    const text = button.textContent || button.id;
+                    button.setAttribute('aria-label', text);
+                }
+            });
+            
+            // 為畫布添加描述
+            tetrisCanvas.setAttribute('aria-label', '俄羅斯方塊遊戲主畫布');
+            tetrisCanvas.setAttribute('role', 'application');
+            nextPieceCanvas.setAttribute('aria-label', '下一個方塊預覽畫布');
+            
+            // 為遊戲區域添加標題
+            const gameContainer = document.querySelector('.container');
+            if (gameContainer && !gameContainer.getAttribute('aria-labelledby')) {
+                const header = document.querySelector('header h1');
+                if (header) {
+                    header.id = header.id || 'game-title';
+                    gameContainer.setAttribute('aria-labelledby', header.id);
+                }
+            }
+            
+            // 為狀態文本添加實時區域
+            statusText.setAttribute('aria-live', 'polite');
+            statusText.setAttribute('aria-atomic', 'true');
+        }
+        
+        // 添加錯誤處理
+        function addErrorHandling() {
+            // 全局錯誤處理
+            window.addEventListener('error', (event) => {
+                console.error('俄羅斯方塊遊戲錯誤:', event.error);
+                // 可以在此處添加錯誤報告或用戶通知
+            });
+            
+            // 未處理的Promise拒絕
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('俄羅斯方塊遊戲未處理的Promise拒絕:', event.reason);
+            });
+            
+            // Canvas渲染錯誤處理
+            const originalFillRect = CanvasRenderingContext2D.prototype.fillRect;
+            CanvasRenderingContext2D.prototype.fillRect = function(...args) {
+                try {
+                    return originalFillRect.apply(this, args);
+                } catch (error) {
+                    console.error('Canvas渲染錯誤:', error);
+                    // 嘗試恢復
+                    try {
+                        this.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    } catch (e) {
+                        // 忽略清理錯誤
+                    }
+                }
+            };
+        }
+        
+        // 設置canvas大小
+        function resizeCanvas() {
+            try {
                 // 保持遊戲板比例
                 const container = document.querySelector('.game-board-container');
+                if (!container) return;
+                
                 const size = Math.min(container.clientWidth, 400);
                 tetrisCanvas.width = Math.floor(size / COLS) * COLS;
                 tetrisCanvas.height = Math.floor(tetrisCanvas.width / COLS) * ROWS;
@@ -1120,13 +1249,40 @@
                 // 重繪遊戲板
                 drawBoard();
                 drawNextPiece();
+            } catch (error) {
+                console.error('調整canvas大小時發生錯誤:', error);
             }
+        }
+        
+        // 清理函數
+        function cleanup() {
+            // 清理時間戳
+            cleanupTimeouts();
+            
+            // 停止動畫幀
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
+            // 移除事件監聽器
+            if (window._tetrisResizeHandler) {
+                window.removeEventListener('resize', window._tetrisResizeHandler);
+                delete window._tetrisResizeHandler;
+            }
+        }
+        
+        // 初始化遊戲
+        function initGame() {
+            // 清理現有資源
+            cleanup();
             
             // 初始調整canvas大小
             resizeCanvas();
             
             // 監聽窗口大小變化
-            window.addEventListener('resize', resizeCanvas);
+            window._tetrisResizeHandler = resizeCanvas;
+            window.addEventListener('resize', window._tetrisResizeHandler);
             
             // 初始化遊戲
             initBoard();
@@ -1135,7 +1291,19 @@
             // 創建初始方塊用於顯示
             nextPiece = createPiece();
             drawNextPiece();
+            
+            // 初始化遊戲速度
+            updateGameSpeed();
+            
+            // 添加可訪問性支援
+            addAccessibilitySupport();
+            
+            // 添加錯誤處理
+            addErrorHandling();
         }
+        
+        // 頁面卸載時清理
+        window.addEventListener('beforeunload', cleanup);
         
         // 初始化遊戲
         initGame();

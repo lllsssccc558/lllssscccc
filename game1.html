@@ -483,7 +483,23 @@
         </div>
     </div>
 
+    <!-- 引入遊戲共用工具庫 -->
+    <script src="shared-game-utils.js"></script>
+    
     <script>
+        // 初始化遊戲工具
+        let gameUtils;
+        try {
+            gameUtils = window.GameUtils.initAll('貪食蛇遊戲');
+        } catch (error) {
+            console.warn('無法初始化遊戲工具庫，使用基本功能:', error);
+            gameUtils = {
+                errorHandler: { handleError: (err) => console.error(err) },
+                accessibility: { announceToScreenReader: () => {} },
+                performanceMonitor: { getPerformanceReport: () => ({}) }
+            };
+        }
+        
         // 遊戲變數
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -515,30 +531,33 @@
         
         // 食物類型定義
         const FOOD_TYPES = {
-            NORMAL: { 
-                name: 'normal', 
-                color: '#ff3333', 
-                highlight: '#ff6666', 
-                score: 10, 
+            NORMAL: {
+                name: 'normal',
+                color: '#ff3333',
+                highlight: '#ff6666',
+                score: 10,
                 lengthIncrease: 1,
-                spawnChance: 0.7 // 70% 機率
+                spawnChance: 0.7, // 70% 機率
+                description: '普通蘋果：+10分，長度+1'
             },
-            GOLDEN: { 
-                name: 'golden', 
-                color: '#ffd700', 
-                highlight: '#ffed4e', 
-                score: 30, 
+            GOLDEN: {
+                name: 'golden',
+                color: '#ffd700',
+                highlight: '#ffed4e',
+                score: 30,
                 lengthIncrease: 2,
-                spawnChance: 0.15 // 15% 機率
+                spawnChance: 0.15, // 15% 機率
+                description: '金蘋果：+30分，長度+2'
             },
-            POISON: { 
-                name: 'poison', 
-                color: '#9b30ff', 
-                highlight: '#bf7fff', 
-                score: 5, 
+            POISON: {
+                name: 'poison',
+                color: '#9b30ff',
+                highlight: '#bf7fff',
+                score: 5,
                 lengthIncrease: 0,
                 speedIncrease: 1,
-                spawnChance: 0.15 // 15% 機率
+                spawnChance: 0.15, // 15% 機率
+                description: '毒蘋果：+5分，速度加快'
             }
         };
         
@@ -551,68 +570,166 @@
         let highScore = localStorage.getItem('snakeHighScore') || 0;
         let gameRunning = false;
         let gamePaused = false;
-        let gameLoop;
-        let speed = 8; // 初始速度
+        let animationFrameId = null;
+        let lastUpdateTime = 0;
+        let speed = 8; // 初始速度 (幀間隔毫秒數)
         let poisonFoodEaten = 0; // 記錄吃到的毒蘋果數量
+        let activeTimeouts = []; // 追蹤活動的setTimeout
+        let gameStartTime = 0; // 遊戲開始時間
         
         // 初始化遊戲
         function initGame() {
-            // 初始化蛇 - 放在畫布中央
-            snake = [
-                {x: Math.floor(tileCountX/2) * gridSize, y: Math.floor(tileCountY/2) * gridSize},
-                {x: (Math.floor(tileCountX/2)-1) * gridSize, y: Math.floor(tileCountY/2) * gridSize},
-                {x: (Math.floor(tileCountX/2)-2) * gridSize, y: Math.floor(tileCountY/2) * gridSize}
-            ];
-            
-            // 初始化食物
-            generateFood();
-            
-            // 重置方向 (初始向右移動)
-            dx = gridSize;
-            dy = 0;
-            
-            // 重置分數和速度
-            score = 0;
-            snakeLength = 3;
-            speed = 8;
-            poisonFoodEaten = 0;
-            scoreElement.textContent = score;
-            snakeLengthElement.textContent = snakeLength;
-            speedElement.textContent = speed;
-            highScoreElement.textContent = highScore;
-            
-            // 隱藏遊戲結束畫面
-            gameOverScreen.style.display = 'none';
-            effectNotification.style.display = 'none';
+            try {
+                // 清理所有活動的定時器
+                cleanupTimeouts();
+                
+                // 停止動畫幀
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                
+                // 初始化蛇 - 放在畫布中央
+                snake = [
+                    {x: Math.floor(tileCountX/2) * gridSize, y: Math.floor(tileCountY/2) * gridSize},
+                    {x: (Math.floor(tileCountX/2)-1) * gridSize, y: Math.floor(tileCountY/2) * gridSize},
+                    {x: (Math.floor(tileCountX/2)-2) * gridSize, y: Math.floor(tileCountY/2) * gridSize}
+                ];
+                
+                // 初始化食物
+                generateFood();
+                
+                // 重置方向 (初始向右移動)
+                dx = gridSize;
+                dy = 0;
+                
+                // 重置分數和速度
+                score = 0;
+                snakeLength = 3;
+                speed = 8;
+                poisonFoodEaten = 0;
+                scoreElement.textContent = score;
+                snakeLengthElement.textContent = snakeLength;
+                speedElement.textContent = speed;
+                highScoreElement.textContent = highScore;
+                
+                // 隱藏遊戲結束畫面
+                gameOverScreen.style.display = 'none';
+                effectNotification.style.display = 'none';
+                
+                // 重置時間追蹤
+                lastUpdateTime = 0;
+                gameStartTime = Date.now();
+                
+                // 螢幕閱讀器通知
+                gameUtils.accessibility.announceToScreenReader('貪食蛇遊戲已初始化，按開始遊戲按鈕開始');
+                
+                return true;
+            } catch (error) {
+                gameUtils.errorHandler.handleError(error, 'initGame');
+                return false;
+            }
         }
         
-        // 隨機生成食物（包含類型）
-        function generateFood() {
-            // 隨機選擇食物類型
-            const rand = Math.random();
-            let selectedType;
-            
-            if (rand < FOOD_TYPES.NORMAL.spawnChance) {
-                selectedType = FOOD_TYPES.NORMAL;
-            } else if (rand < FOOD_TYPES.NORMAL.spawnChance + FOOD_TYPES.GOLDEN.spawnChance) {
-                selectedType = FOOD_TYPES.GOLDEN;
-            } else {
-                selectedType = FOOD_TYPES.POISON;
+        // 清理所有活動的setTimeout
+        function cleanupTimeouts() {
+            try {
+                activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+                activeTimeouts = [];
+            } catch (error) {
+                gameUtils.errorHandler.handleError(error, 'cleanupTimeouts');
             }
-            
-            // 隨機生成食物位置
-            food = {
-                x: Math.floor(Math.random() * tileCountX) * gridSize,
-                y: Math.floor(Math.random() * tileCountY) * gridSize,
-                type: selectedType
-            };
-            
-            // 確保食物不會出現在蛇身上
-            for (let segment of snake) {
-                if (segment.x === food.x && segment.y === food.y) {
-                    generateFood();
-                    return;
+        }
+        
+        // 安全的setTimeout，會自動追蹤和清理
+        function safeSetTimeout(callback, delay) {
+            try {
+                const timeoutId = setTimeout(() => {
+                    // 從活動列表中移除
+                    const index = activeTimeouts.indexOf(timeoutId);
+                    if (index > -1) {
+                        activeTimeouts.splice(index, 1);
+                    }
+                    try {
+                        callback();
+                    } catch (error) {
+                        gameUtils.errorHandler.handleError(error, 'safeSetTimeout callback');
+                    }
+                }, delay);
+                activeTimeouts.push(timeoutId);
+                return timeoutId;
+            } catch (error) {
+                gameUtils.errorHandler.handleError(error, 'safeSetTimeout');
+                return null;
+            }
+        }
+        
+        // 隨機生成食物（包含類型）- 改進版本，避免遞歸
+        function generateFood() {
+            try {
+                let attempts = 0;
+                const maxAttempts = 100; // 防止無限循環
+                
+                while (attempts < maxAttempts) {
+                    // 隨機選擇食物類型
+                    const rand = Math.random();
+                    let selectedType;
+                    
+                    if (rand < FOOD_TYPES.NORMAL.spawnChance) {
+                        selectedType = FOOD_TYPES.NORMAL;
+                    } else if (rand < FOOD_TYPES.NORMAL.spawnChance + FOOD_TYPES.GOLDEN.spawnChance) {
+                        selectedType = FOOD_TYPES.GOLDEN;
+                    } else {
+                        selectedType = FOOD_TYPES.POISON;
+                    }
+                    
+                    // 隨機生成食物位置
+                    const newFood = {
+                        x: Math.floor(Math.random() * tileCountX) * gridSize,
+                        y: Math.floor(Math.random() * tileCountY) * gridSize,
+                        type: selectedType
+                    };
+                    
+                    // 檢查食物是否在蛇身上
+                    let collision = false;
+                    for (let segment of snake) {
+                        if (segment.x === newFood.x && segment.y === newFood.y) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    
+                    // 如果沒有碰撞，設置食物並返回
+                    if (!collision) {
+                        food = newFood;
+                        
+                        // 螢幕閱讀器通知（僅在遊戲運行時）
+                        if (gameRunning) {
+                            const foodDesc = FOOD_TYPES[selectedType.name.toUpperCase()].description;
+                            gameUtils.accessibility.announceToScreenReader(`生成${foodDesc}`);
+                        }
+                        
+                        return;
+                    }
+                    
+                    attempts++;
                 }
+                
+                // 如果找不到合適位置，使用備用位置（蛇頭上方）
+                console.warn('無法找到合適的食物位置，使用備用位置');
+                food = {
+                    x: snake[0].x,
+                    y: (snake[0].y - gridSize + canvas.height) % canvas.height,
+                    type: FOOD_TYPES.NORMAL
+                };
+            } catch (error) {
+                gameUtils.errorHandler.handleError(error, 'generateFood');
+                // 使用默認食物位置
+                food = {
+                    x: Math.floor(tileCountX/2) * gridSize,
+                    y: Math.floor(tileCountY/2) * gridSize,
+                    type: FOOD_TYPES.NORMAL
+                };
             }
         }
         
@@ -754,8 +871,8 @@
             effectNotification.style.boxShadow = `0 0 15px ${color}80`;
             effectNotification.style.display = 'block';
             
-            // 3秒後隱藏通知
-            setTimeout(() => {
+            // 3秒後隱藏通知 (使用安全的setTimeout)
+            safeSetTimeout(() => {
                 effectNotification.style.display = 'none';
             }, 3000);
         }
@@ -772,8 +889,8 @@
             ctx.fillStyle = flashColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // 恢復原始背景色
-            setTimeout(() => {
+            // 恢復原始背景色 (使用安全的setTimeout)
+            safeSetTimeout(() => {
                 ctx.fillStyle = originalFillStyle;
             }, 100);
         }
@@ -821,14 +938,10 @@
                     speed += foodType.speedIncrease;
                     speedElement.textContent = speed;
                     
-                    // 重新設置遊戲循環以應用新速度
-                    clearInterval(gameLoop);
-                    gameLoop = setInterval(gameStep, 1000 / speed);
-                    
                     // 顯示通知
                     showEffectNotification('速度加快！', '#9b30ff');
                     flashEffect('rgba(155, 48, 255, 0.3)');
-                } 
+                }
                 else if (foodType.name === 'golden') {
                     // 金蘋果：額外獎勵
                     showEffectNotification('金蘋果！+30分', '#ffd700');
@@ -843,9 +956,6 @@
                 if (score % 50 === 0 && foodType.name !== 'poison') {
                     speed += 1;
                     speedElement.textContent = speed;
-                    clearInterval(gameLoop);
-                    gameLoop = setInterval(gameStep, 1000 / speed);
-                    
                     showEffectNotification('速度等級提升！', '#4CAF50');
                 }
                 
@@ -857,10 +967,30 @@
             }
         }
         
-        // 遊戲主循環
-        function gameStep() {
-            updateGame();
-            drawGame();
+        // 遊戲主循環 (使用requestAnimationFrame)
+        function gameLoop(currentTime) {
+            if (!gameRunning || gamePaused) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            // 計算時間差，控制遊戲速度
+            if (lastUpdateTime === 0) {
+                lastUpdateTime = currentTime;
+            }
+            
+            const deltaTime = currentTime - lastUpdateTime;
+            const frameInterval = 1000 / speed; // 每幀間隔毫秒數
+            
+            // 如果時間差足夠大，更新遊戲狀態
+            if (deltaTime >= frameInterval) {
+                updateGame();
+                drawGame();
+                lastUpdateTime = currentTime - (deltaTime % frameInterval); // 保留多餘時間
+            }
+            
+            // 繼續下一幀
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
         
         // 開始遊戲循環
@@ -872,13 +1002,14 @@
                 startBtn.textContent = "重新開始";
                 pauseBtn.textContent = "暫停遊戲";
                 
-                // 清除現有循環
-                if (gameLoop) {
-                    clearInterval(gameLoop);
+                // 停止現有動畫幀
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
                 }
                 
                 // 開始新循環
-                gameLoop = setInterval(gameStep, 1000 / speed);
+                lastUpdateTime = 0;
+                animationFrameId = requestAnimationFrame(gameLoop);
             }
         }
         
@@ -889,27 +1020,40 @@
             gamePaused = !gamePaused;
             pauseBtn.textContent = gamePaused ? "繼續遊戲" : "暫停遊戲";
             
-            if (gamePaused) {
-                clearInterval(gameLoop);
-            } else {
-                gameLoop = setInterval(gameStep, 1000 / speed);
+            if (!gamePaused && !animationFrameId) {
+                // 如果遊戲繼續但沒有動畫幀，重新開始
+                lastUpdateTime = 0;
+                animationFrameId = requestAnimationFrame(gameLoop);
             }
         }
         
         // 重新開始遊戲
         function restartGame() {
-            clearInterval(gameLoop);
+            // 停止現有動畫幀
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            
             initGame();
             gameRunning = true;
             gamePaused = false;
             pauseBtn.textContent = "暫停遊戲";
-            gameLoop = setInterval(gameStep, 1000 / speed);
+            
+            // 開始新循環
+            lastUpdateTime = 0;
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
         
         // 遊戲結束
         function gameOver() {
             gameRunning = false;
-            clearInterval(gameLoop);
+            
+            // 停止動畫幀
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
             
             // 更新最高分數
             if (score > highScore) {
@@ -994,10 +1138,83 @@
         drawGame();
         highScoreElement.textContent = highScore;
         
-        // 提示用戶如何開始遊戲
-        setTimeout(() => {
+        // 添加基本的可訪問性支援
+        function addAccessibilitySupport() {
+            // 為按鈕添加ARIA標籤
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (!button.getAttribute('aria-label')) {
+                    const text = button.textContent || button.id;
+                    button.setAttribute('aria-label', text);
+                }
+            });
+            
+            // 為畫布添加描述
+            canvas.setAttribute('aria-label', '貪食蛇遊戲畫布');
+            canvas.setAttribute('role', 'application');
+            
+            // 為遊戲區域添加標題
+            const gameContainer = document.querySelector('.game-container');
+            if (gameContainer && !gameContainer.getAttribute('aria-labelledby')) {
+                const header = document.querySelector('.game-header h1');
+                if (header) {
+                    header.id = header.id || 'game-title';
+                    gameContainer.setAttribute('aria-labelledby', header.id);
+                }
+            }
+        }
+        
+        // 添加錯誤處理
+        function addErrorHandling() {
+            // 全局錯誤處理
+            window.addEventListener('error', (event) => {
+                console.error('遊戲錯誤:', event.error);
+                // 可以在此處添加錯誤報告或用戶通知
+            });
+            
+            // 未處理的Promise拒絕
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('未處理的Promise拒絕:', event.reason);
+            });
+        }
+        
+        // 初始化可訪問性和錯誤處理
+        addAccessibilitySupport();
+        addErrorHandling();
+        
+        // 提示用戶如何開始遊戲 (使用安全的setTimeout)
+        safeSetTimeout(() => {
             if (!gameRunning) {
-                alert("歡迎來到貪食蛇遊戲 - 多種食物版本！\n\n點擊「開始遊戲」按鈕開始遊玩！\n\n使用方向鍵或WASD控制蛇的移動。\n\n三種食物類型：\n• 紅蘋果：+10分，長度+1\n• 金蘋果：+30分，長度+2\n• 毒蘋果：+5分，遊戲速度加快\n\n避免撞牆或撞到自己！");
+                // 使用更友好的方式顯示提示，而不是alert
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'welcome-message';
+                welcomeMessage.innerHTML = `
+                    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px;
+                                border: 2px solid #4CAF50; z-index: 1000; max-width: 500px; text-align: center;">
+                        <h3 style="color: #4CAF50; margin-bottom: 15px;">歡迎來到貪食蛇遊戲！</h3>
+                        <p style="margin-bottom: 10px;">點擊「開始遊戲」按鈕開始遊玩！</p>
+                        <p style="margin-bottom: 10px;">使用方向鍵或WASD控制蛇的移動。</p>
+                        <p style="margin-bottom: 15px;">三種食物類型：</p>
+                        <ul style="text-align: left; margin-left: 20px; margin-bottom: 15px;">
+                            <li><span style="color:#ff3333">紅蘋果</span>: +10分，長度+1</li>
+                            <li><span style="color:#ffd700">金蘋果</span>: +30分，長度+2</li>
+                            <li><span style="color:#9b30ff">毒蘋果</span>: +5分，遊戲速度加快</li>
+                        </ul>
+                        <p style="margin-bottom: 15px;">避免撞牆或撞到自己！</p>
+                        <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            我知道了
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(welcomeMessage);
+                
+                // 自動在5秒後關閉
+                safeSetTimeout(() => {
+                    if (welcomeMessage.parentElement) {
+                        welcomeMessage.remove();
+                    }
+                }, 5000);
             }
         }, 300);
     </script>
